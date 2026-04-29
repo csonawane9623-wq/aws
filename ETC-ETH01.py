@@ -7,13 +7,13 @@ import uuid
 import json
 
 # ============ CONFIG ============
-API_KEY = "Dm4NePyGcjhCMnSXJBPvEymJOEA6PE"
-API_SECRET = "a5i50IcgBPlcmNSrEc4UTVUUPLWkxH6LvjNeOtrhtobsXEQyGn9sQ0OJmIk0"
+API_KEY = os.getenv("API_KEY")
+API_SECRET = os.getenv("API_SECRET")
 BASE_URL = "https://api.india.delta.exchange"
 
 # TELEGRAM
-TELEGRAM_TOKEN = "8798956944:AAGNlEQgOneX5mgOlosVupux_Lunz01NiJo"
-TELEGRAM_CHAT_ID = "1184234885"
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 ETH_THRESHOLD = 0.000034
 ETC_THRESHOLD = 0.0001
