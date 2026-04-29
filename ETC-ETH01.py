@@ -1,0 +1,291 @@
+import time
+import hmac
+import hashlib
+import requests
+import logging
+import uuid
+import json
+
+# ============ CONFIG ============
+API_KEY = "Dm4NePyGcjhCMnSXJBPvEymJOEA6PE"
+API_SECRET = "a5i50IcgBPlcmNSrEc4UTVUUPLWkxH6LvjNeOtrhtobsXEQyGn9sQ0OJmIk0"
+BASE_URL = "https://api.india.delta.exchange"
+
+# TELEGRAM
+TELEGRAM_TOKEN = "8798956944:AAGNlEQgOneX5mgOlosVupux_Lunz01NiJo"
+TELEGRAM_CHAT_ID = "1184234885"
+
+ETH_THRESHOLD = 0.000034
+ETC_THRESHOLD = 0.0001
+TARGET_PNL_PERCENT = 0.15
+CAPITAL_PERCENT = 0.10
+LEVERAGE = 50
+
+RETRY = 5
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
+# ============ TELEGRAM ============
+last_msg_time = 0
+
+def send_telegram(msg):
+    try:
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+        payload = {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": msg,
+            "parse_mode": "Markdown"
+        }
+        requests.post(url, json=payload, timeout=5)
+    except Exception as e:
+        logging.error(f"Telegram error: {e}")
+
+def send_telegram_safe(msg, cooldown=5):
+    global last_msg_time
+    if time.time() - last_msg_time > cooldown:
+        send_telegram(msg)
+        last_msg_time = time.time()
+
+# ============ CLIENT ============
+class DeltaClient:
+    def __init__(self):
+        self.key = API_KEY
+        self.secret = API_SECRET.encode()
+
+    def _sign(self, method, path, payload=""):
+        ts = str(int(time.time()))
+        msg = method + ts + path + payload
+        sig = hmac.new(self.secret, msg.encode(), hashlib.sha256).hexdigest()
+        return sig, ts
+
+    def _request(self, method, path, data=None, auth=False):
+        url = BASE_URL + path
+        payload = json.dumps(data) if data else ""
+
+        for i in range(RETRY):
+            try:
+                headers = {"Content-Type": "application/json"}
+
+                if auth:
+                    sig, ts = self._sign(method, path, payload)
+                    headers.update({
+                        "api-key": self.key,
+                        "timestamp": ts,
+                        "signature": sig
+                    })
+
+                r = requests.get(url, headers=headers) if method == "GET" else requests.post(url, data=payload, headers=headers)
+
+                if r.status_code == 200:
+                    res = r.json()
+                    if not res.get("success", False):
+                        logging.error(f"API logical error: {res}")
+                        return None
+                    return res
+
+                logging.error(f"HTTP error: {r.text}")
+
+            except Exception as e:
+                logging.error(f"Request failed: {e}")
+
+            time.sleep(2 ** i)
+
+        send_telegram_safe(f"⚠️ API ERROR\nPath: {path}")
+        return None
+
+    def get_products(self):
+        return self._request("GET", "/v2/products")
+
+    def get_ticker(self, symbol):
+        return self._request("GET", f"/v2/tickers/{symbol}")
+
+    def get_balance(self):
+        return self._request("GET", "/v2/wallet/balances", auth=True)
+
+    def place_order(self, product_id, side, size, cid):
+        body = {
+            "product_id": product_id,
+            "size": size,
+            "side": side,
+            "order_type": "market_order",
+            "client_order_id": cid
+        }
+        return self._request("POST", "/v2/orders", body, auth=True)
+
+    def get_order(self, cid):
+        return self._request("GET", f"/v2/orders/client_order_id/{cid}", auth=True)
+
+    def get_positions(self):
+        return self._request("GET", "/v2/positions/margined", auth=True)
+
+    def set_leverage(self, product_id):
+        path = f"/v2/products/{product_id}/orders/leverage"
+        return self._request("POST", path, {"leverage": LEVERAGE}, auth=True)
+
+# ============ BOT ============
+class FundingArbitrageBot:
+    def __init__(self):
+        self.client = DeltaClient()
+        self.products = {}
+        self.leverage_set = set()
+        self.last_pnl_alert = 0
+        self.load_products()
+
+    def gen_id(self):
+        return uuid.uuid4().hex[:32]
+
+    def load_products(self):
+        data = self.client.get_products()
+        if not data:
+            raise Exception("Failed to load products")
+        for p in data["result"]:
+            self.products[p["symbol"]] = p
+        logging.info("Products loaded")
+
+    def get_balance(self):
+        data = self.client.get_balance()
+        if not data:
+            return 0.0
+        for b in data["result"]:
+            if b["asset_symbol"] == "USDT":
+                return float(b["balance"])
+        return 0.0
+
+    def get_active_positions(self):
+        data = self.client.get_positions()
+        if not data:
+            return []
+        return [p for p in data["result"] if abs(float(p.get("size", 0))) > 0]
+
+    def wait_fill(self, cid):
+        for _ in range(6):
+            o = self.client.get_order(cid)
+            if o and o["result"]["state"] == "closed":
+                return True
+            time.sleep(1)
+        return False
+
+    def ensure_leverage(self, symbol):
+        if symbol in self.leverage_set:
+            return
+        pid = self.products[symbol]["id"]
+        res = self.client.set_leverage(pid)
+        if res:
+            send_telegram_safe(f"⚙️ Leverage set for {symbol} ({LEVERAGE}x)")
+            self.leverage_set.add(symbol)
+
+    def compute_equal_notional_sizes(self):
+        balance = self.get_balance()
+        total_capital = balance * CAPITAL_PERCENT
+        target_each = total_capital / 2
+
+        eth_t = self.client.get_ticker("ETHUSD")
+        etc_t = self.client.get_ticker("ETCUSD")
+        if not eth_t or not etc_t:
+            return 0, 0
+
+        eth_price = float(eth_t["result"]["mark_price"])
+        etc_price = float(etc_t["result"]["mark_price"])
+
+        eth_cv = float(self.products["ETHUSD"]["contract_value"])
+        etc_cv = float(self.products["ETCUSD"]["contract_value"])
+
+        eth_size = max(int((target_each / eth_price) / eth_cv), 1)
+        etc_size = max(int((target_each / etc_price) / etc_cv), 1)
+
+        eth_notional = eth_size * eth_cv * eth_price
+        etc_size = max(int((eth_notional / etc_price) / etc_cv), 1)
+
+        return eth_size, etc_size
+
+    def place_trade(self):
+        eth_size, etc_size = self.compute_equal_notional_sizes()
+        if eth_size <= 0 or etc_size <= 0:
+            send_telegram_safe("❌ Invalid trade sizes")
+            return
+
+        self.ensure_leverage("ETHUSD")
+        self.ensure_leverage("ETCUSD")
+
+        eth_id = self.gen_id()
+        etc_id = self.gen_id()
+
+        # SHORT ETH
+        if not self.client.place_order(self.products["ETHUSD"]["id"], "sell", eth_size, eth_id):
+            send_telegram_safe("❌ ETH order failed")
+            return
+        if not self.wait_fill(eth_id):
+            send_telegram_safe("❌ ETH not filled")
+            return
+
+        # LONG ETC
+        if not self.client.place_order(self.products["ETCUSD"]["id"], "buy", etc_size, etc_id):
+            send_telegram_safe("❌ ETC failed → rollback ETH")
+            self.client.place_order(self.products["ETHUSD"]["id"], "buy", eth_size, self.gen_id())
+            return
+        if not self.wait_fill(etc_id):
+            send_telegram_safe("❌ ETC not filled → rollback ETH")
+            self.client.place_order(self.products["ETHUSD"]["id"], "buy", eth_size, self.gen_id())
+            return
+
+        send_telegram(
+            f"🚀 TRADE EXECUTED\n"
+            f"SHORT ETH: {eth_size}\n"
+            f"LONG ETC: {etc_size}"
+        )
+
+    def close_all(self):
+        for p in self.get_active_positions():
+            size = float(p.get("size", 0))
+            if size == 0:
+                continue
+            side = "sell" if size > 0 else "buy"
+            self.client.place_order(p["product_id"], side, int(abs(size)), self.gen_id())
+        send_telegram("🔒 ALL POSITIONS CLOSED")
+
+    def run(self):
+        send_telegram("✅ Bot Started: ETH-ETC Arbitrage")
+
+        while True:
+            try:
+                eth_t = self.client.get_ticker("ETHUSD")
+                etc_t = self.client.get_ticker("ETCUSD")
+
+                if not eth_t or not etc_t:
+                    time.sleep(3)
+                    continue
+
+                eth = float(eth_t["result"]["funding_rate"])
+                etc = float(etc_t["result"]["funding_rate"])
+
+                logging.info(f"ETH: {eth}, ETC: {etc}")
+
+                if eth >= ETH_THRESHOLD and etc >= ETC_THRESHOLD and not self.get_active_positions():
+                    send_telegram(
+                        f"📊 ENTRY SIGNAL\nETH: {eth}\nETC: {etc}"
+                    )
+                    self.place_trade()
+
+                positions = self.get_active_positions()
+                if positions:
+                    pnl = sum(float(p.get("unrealized_pnl", 0)) for p in positions)
+                    balance = self.get_balance()
+
+                    if time.time() - self.last_pnl_alert > 600:
+                        send_telegram_safe(f"📈 PnL: {pnl}")
+                        self.last_pnl_alert = time.time()
+
+                    if pnl >= balance * TARGET_PNL_PERCENT:
+                        send_telegram(f"🎯 TARGET HIT\nPnL: {pnl}")
+                        self.close_all()
+
+            except Exception as e:
+                logging.error(f"Loop error: {e}")
+                send_telegram_safe(f"❌ BOT ERROR: {e}")
+
+            time.sleep(3)
+
+
+# ============ RUN ============
+if __name__ == "__main__":
+    FundingArbitrageBot().run()
