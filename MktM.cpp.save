@@ -1,0 +1,746 @@
+/**
+ * ============================================================
+ *  Delta Exchange India  –  Auto Position Closer Bot  (C++)
+ * ============================================================
+ *  Flow (repeats 24/7):
+ *    1. Fetch & display all open positions  (+ raw JSON dump)
+ *    2. Ask user for close time  (HH:MM:SS:ms  IST)
+ *    3. Live countdown
+ *    4. Try Delta's native "close all positions" endpoint first
+ *       → On failure: fall back to per-position market orders
+ *       → Retry failed orders up to MAX_CLOSE_RETRIES times
+ *    5. Wait 2 seconds, then restart from Step 1
+ *
+ *  Dependencies:
+ *    - libcurl          (HTTP requests)
+ *    - nlohmann/json    (JSON parsing)
+ *    - OpenSSL          (HMAC-SHA256 signing)
+ *
+ *  Compilation (Linux / macOS):
+ *    g++ -std=c++17 -O2 -o delta_close_bot delta_close_bot.cpp \
+ *        -lcurl -lssl -lcrypto
+ *
+ *  Compilation (Windows - MinGW/MSYS2):
+ *    g++ -std=c++17 -O2 -o delta_close_bot.exe delta_close_bot.cpp \
+ *        -lcurl -lssl -lcrypto -lws2_32
+ * ============================================================
+ */
+
+#include <algorithm>
+#include <chrono>
+#include <cstring>
+#include <ctime>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include <curl/curl.h>
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
+
+// ─────────────────────────────────────────────────────────────
+//  Cross-platform gmtime
+// ─────────────────────────────────────────────────────────────
+#ifdef _WIN32
+  #define GMTIME_SAFE(tm_ptr, t_ptr)  gmtime_s((tm_ptr), (t_ptr))
+#else
+  #define GMTIME_SAFE(tm_ptr, t_ptr)  gmtime_r((t_ptr), (tm_ptr))
+#endif
+
+// ─────────────────────────────────────────────────────────────
+//  Configuration
+// ─────────────────────────────────────────────────────────────
+static const std::string API_KEY    = "Shlc2bqXOYOxN3dJpFDvhvperQIEz6";
+static const std::string API_SECRET = "BSNFnU4afcyGMVjUs7i1jiStgdEndknRH1OsDcPdhhPVWcfDbaXMLqbqQhAf";
+static const std::string BASE_URL   = "https://api.india.delta.exchange";
+// static const std::string BASE_URL = "https://cdn-ind.testnet.deltaex.org";
+
+static constexpr long IST_OFFSET_SEC = 19800;   // UTC+5:30
+
+// ── Retry settings ───────────────────────────────────────────
+static constexpr int MAX_CLOSE_RETRIES = 5;    // per-position fallback retries
+static constexpr int RETRY_DELAY_MS    = 1000; // ms between retries
+
+// ── Debug: set true to print raw JSON from positions API ─────
+static constexpr bool DUMP_RAW_JSON = true;
+
+
+// ─────────────────────────────────────────────────────────────
+//  Logging
+// ─────────────────────────────────────────────────────────────
+static std::string timestamp_str()
+{
+    auto now = std::chrono::system_clock::now();
+    std::time_t t = std::chrono::system_clock::to_time_t(now);
+    t += IST_OFFSET_SEC;
+    std::tm tm{};
+    GMTIME_SAFE(&tm, &t);
+    char buf[32];
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &tm);
+    return std::string(buf);
+}
+
+#define LOG_INFO(msg)  std::cout << timestamp_str() << "  INFO     " << msg << "\n"
+#define LOG_WARN(msg)  std::cout << timestamp_str() << "  WARN     " << msg << "\n"
+#define LOG_ERROR(msg) std::cerr << timestamp_str() << "  ERROR    " << msg << "\n"
+#define LOG_DEBUG(msg) std::cout << timestamp_str() << "  DEBUG    " << msg << "\n"
+
+
+// ─────────────────────────────────────────────────────────────
+//  HMAC-SHA256
+// ─────────────────────────────────────────────────────────────
+static std::string hmac_sha256_hex(const std::string& secret,
+                                    const std::string& message)
+{
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int  digest_len = 0;
+    HMAC(EVP_sha256(),
+         secret.data(), static_cast<int>(secret.size()),
+         reinterpret_cast<const unsigned char*>(message.data()),
+         message.size(), digest, &digest_len);
+
+    std::ostringstream oss;
+    for (unsigned int i = 0; i < digest_len; ++i)
+        oss << std::hex << std::setw(2) << std::setfill('0')
+            << static_cast<int>(digest[i]);
+    return oss.str();
+}
+
+
+// ─────────────────────────────────────────────────────────────
+//  Auth
+// ─────────────────────────────────────────────────────────────
+struct AuthHeaders { std::string timestamp, signature; };
+
+static AuthHeaders make_auth(const std::string& method,
+                              const std::string& path,
+                              const std::string& query = "",
+                              const std::string& body  = "")
+{
+    std::string ts  = std::to_string(static_cast<long>(std::time(nullptr)));
+    std::string msg = method + ts + path + query + body;
+    return { ts, hmac_sha256_hex(API_SECRET, msg) };
+}
+
+
+// ─────────────────────────────────────────────────────────────
+//  libcurl helpers
+// ─────────────────────────────────────────────────────────────
+static size_t write_cb(char* ptr, size_t size, size_t nmemb, void* userdata)
+{
+    reinterpret_cast<std::string*>(userdata)->append(ptr, size * nmemb);
+    return size * nmemb;
+}
+
+static curl_slist* build_headers(const AuthHeaders& auth, bool with_ct = false)
+{
+    curl_slist* list = nullptr;
+    list = curl_slist_append(list, ("api-key: "   + API_KEY).c_str());
+    list = curl_slist_append(list, ("timestamp: " + auth.timestamp).c_str());
+    list = curl_slist_append(list, ("signature: " + auth.signature).c_str());
+    list = curl_slist_append(list, "User-Agent: cpp-delta-close-bot/2.0");
+    list = curl_slist_append(list, "Accept: application/json");
+    if (with_ct)
+        list = curl_slist_append(list, "Content-Type: application/json");
+    return list;
+}
+
+static std::string http_get(const std::string& url, const AuthHeaders& auth)
+{
+    CURL* curl = curl_easy_init();
+    std::string resp;
+    if (!curl) return resp;
+    curl_slist* hdrs = build_headers(auth);
+    curl_easy_setopt(curl, CURLOPT_URL,            url.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER,     hdrs);
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,  write_cb);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA,      &resp);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT,        30L);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+    curl_easy_perform(curl);
+    curl_slist_free_all(hdrs);
+    curl_easy_cleanup(curl);
+    return resp;
+}
+
+static std::string http_post(const std::string& url, const AuthHeaders& auth,
+                              const std::string& body)
+{
+    CURL* curl = curl_easy_init();
+    std::string resp;
+    if (!curl) return resp;
+    curl_slist* hdrs = build_headers(auth, true);
+    curl_easy_setopt(curl, CURLOPT_URL,            url.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER,     hdrs);
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDS,     body.c_str());
+    curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE,  (long)body.size());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,  write_cb);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA,      &resp);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT,        30L);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+    curl_easy_perform(curl);
+    curl_slist_free_all(hdrs);
+    curl_easy_cleanup(curl);
+    return resp;
+}
+
+// DELETE with optional body (used by close-all endpoint)
+static std::string http_delete(const std::string& url, const AuthHeaders& auth,
+                                const std::string& body = "")
+{
+    CURL* curl = curl_easy_init();
+    std::string resp;
+    if (!curl) return resp;
+    curl_slist* hdrs = build_headers(auth, !body.empty());
+    curl_easy_setopt(curl, CURLOPT_URL,            url.c_str());
+    curl_easy_setopt(curl, CURLOPT_HTTPHEADER,     hdrs);
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST,  "DELETE");
+    if (!body.empty()) {
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS,    body.c_str());
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)body.size());
+    }
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,  write_cb);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA,      &resp);
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT,        30L);
+    curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 5L);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 1L);
+    curl_easy_perform(curl);
+    curl_slist_free_all(hdrs);
+    curl_easy_cleanup(curl);
+    return resp;
+}
+
+
+// ─────────────────────────────────────────────────────────────
+//  Position struct
+//  NOTE: 'size' is the RAW signed integer from the API.
+//        It is directly the number of contracts (signed).
+//        Positive = long, Negative = short.
+//        We store the raw string too for debug logging.
+// ─────────────────────────────────────────────────────────────
+struct Position {
+    int         product_id  = 0;
+    std::string symbol;
+    long long   size_raw    = 0;    // exact integer from API (signed contracts)
+    std::string size_str;           // raw string as received (for debug)
+    std::string entry_side;         // "buy" or "sell"
+    std::string entry_price;
+};
+
+
+// ─────────────────────────────────────────────────────────────
+//  Safe integer size extraction
+//  Delta always returns size as an integer (signed number of contracts).
+//  It may come as JSON number or JSON string. We handle both.
+//  Returns true on success, false if the field is missing / zero / bad.
+// ─────────────────────────────────────────────────────────────
+static bool extract_size(const json& item, long long& out_size, std::string& out_str)
+{
+    if (!item.contains("size")) return false;
+    const auto& sf = item["size"];
+
+    if (sf.is_number_integer()) {
+        out_size = sf.get<long long>();
+        out_str  = std::to_string(out_size);
+    } else if (sf.is_number_float()) {
+        double d  = sf.get<double>();
+        out_size  = static_cast<long long>(std::round(d));
+        out_str   = std::to_string(d);
+    } else if (sf.is_string()) {
+        out_str  = sf.get<std::string>();
+        // Parse as double first (handles "-1", "-1.0", etc.), then round
+        try {
+            double d = std::stod(out_str);
+            out_size = static_cast<long long>(std::round(d));
+        } catch (...) { return false; }
+    } else if (sf.is_null()) {
+        out_size = 0; out_str = "null";
+    } else {
+        return false;
+    }
+
+    return (out_size != 0);
+}
+
+
+// ─────────────────────────────────────────────────────────────
+//  Fetch open positions
+// ─────────────────────────────────────────────────────────────
+static std::vector<Position> get_open_positions()
+{
+    std::string path = "/v2/positions/margined";
+    auto auth = make_auth("GET", path);
+    std::string raw = http_get(BASE_URL + path, auth);
+
+    std::vector<Position> result;
+    if (raw.empty()) { LOG_ERROR("Empty response from positions endpoint."); return result; }
+
+    // ── Debug: print raw JSON so we can see exactly what Delta returns ───
+    if (DUMP_RAW_JSON) {
+        LOG_DEBUG("Raw positions JSON:");
+        // Pretty-print if possible, else dump as-is
+        try {
+            //auto pretty = json::parse(raw).dump(2);
+            //std::cout << pretty << "\n";
+        } catch (...) {
+                    }
+    }
+
+    json j;
+    try { j = json::parse(raw); }
+    catch (...) { LOG_ERROR("JSON parse error: " << raw); return result; }
+
+    if (!j.value("success", false)) { LOG_ERROR("API error: " << raw); return result; }
+
+    for (auto& item : j["result"]) {
+        long long sz = 0;
+        std::string sz_str;
+        if (!extract_size(item, sz, sz_str)) continue;   // skip zero/flat positions
+
+        Position p;
+        p.product_id  = item.value("product_id",     0);
+        p.symbol      = item.value("product_symbol", std::to_string(p.product_id));
+        p.size_raw    = sz;
+        p.size_str    = sz_str;
+        p.entry_side  = item.value("entry_side",     "");
+        p.entry_price = (item.contains("entry_price") && !item["entry_price"].is_null())
+                        ? item["entry_price"].dump() : "N/A";
+        if (p.entry_price.size() > 1 && p.entry_price.front() == '"')
+            p.entry_price = p.entry_price.substr(1, p.entry_price.size() - 2);
+        result.push_back(p);
+    }
+    return result;
+}
+
+
+// ─────────────────────────────────────────────────────────────
+//  Display table
+// ─────────────────────────────────────────────────────────────
+static void display_positions(const std::vector<Position>& positions)
+{
+    if (positions.empty()) {
+        std::cout << "\n  No open positions found.\n\n";
+        return;
+    }
+    std::cout << std::setfill(' ');
+    const std::string sep(96, '-');
+    std::cout << "\n  Found " << positions.size() << " open position(s):\n\n"
+              << "  " << sep << "\n"
+              << "  " << std::left
+              << std::setw(6)  << "S.No"
+              << std::setw(22) << "Symbol"
+              << std::setw(14) << "Product ID"
+              << std::setw(10) << "Side"
+              << std::setw(16) << "Size (raw str)"
+              << std::setw(12) << "Contracts"
+              << std::setw(14) << "Entry Price" << "\n"
+              << "  " << sep << "\n";
+
+    int idx = 1;
+    for (const auto& p : positions) {
+        std::string su = p.entry_side;
+        std::transform(su.begin(), su.end(), su.begin(), ::toupper);
+        long long abs_contracts = std::abs(p.size_raw);
+        std::cout << std::setfill(' ') << "  " << std::left
+                  << std::setw(6)  << idx++
+                  << std::setw(22) << p.symbol
+                  << std::setw(14) << p.product_id
+                  << std::setw(10) << (su.empty() ? "N/A" : su)
+                  << std::setw(16) << p.size_str       // raw string: shows exactly what API returned
+                  << std::setw(12) << abs_contracts     // computed integer to send as order size
+                  << std::setw(14) << p.entry_price << "\n";
+    }
+    std::cout << "  " << sep << "\n\n";
+}
+
+
+// ─────────────────────────────────────────────────────────────
+//  Error classification
+// ─────────────────────────────────────────────────────────────
+static std::string extract_error_code(const json& resp)
+{
+    try {
+        if (resp.contains("error") && resp["error"].contains("code"))
+            return resp["error"]["code"].get<std::string>();
+    } catch (...) {}
+    return "";
+}
+
+static bool is_permanent_error(const std::string& code)
+{
+    static const std::vector<std::string> permanent = {
+        "ip_not_whitelisted_for_api_key",
+        "insufficient_margin",
+        "invalid_api_key",
+        "api_key_does_not_exist",
+        "immediate_or_cancel_order_liquidated",
+        "post_only_order_rejected",
+        "size_must_be_greater_than_zero",
+        "order_size_exceed_position",
+    };
+    for (const auto& p : permanent)
+        if (code == p) return true;
+    return false;
+}
+
+
+// ─────────────────────────────────────────────────────────────
+//  STRATEGY 1: Delta native "close all positions" endpoint
+//  POST /v2/orders/close_all  (no body needed, closes everything)
+//  Returns true if the API accepted the request.
+// ─────────────────────────────────────────────────────────────
+static bool try_close_all_native()
+{
+    std::string path = "/v2/orders/close_all";
+    std::string body = "{}";
+    auto auth = make_auth("POST", path, "", body);
+
+    LOG_INFO("Attempting native close-all: POST " << path);
+    std::string raw = http_post(BASE_URL + path, auth, body);
+
+    if (raw.empty()) { LOG_ERROR("  Empty response from close_all endpoint."); return false; }
+
+    json resp;
+    try { resp = json::parse(raw); }
+    catch (...) { LOG_ERROR("  JSON parse error: " << raw); return false; }
+
+    if (resp.value("success", false)) {
+        LOG_INFO("  Native close-all accepted by exchange.");
+        return true;
+    }
+
+    std::string err = extract_error_code(resp);
+    LOG_WARN("  Native close-all failed: code=" << err << " | " << raw);
+    return false;
+}
+
+
+// ─────────────────────────────────────────────────────────────
+//  STRATEGY 2: Per-position market order  (fallback)
+//  Uses size_raw to compute exact contract count.
+//  Retries up to MAX_CLOSE_RETRIES on transient errors.
+// ─────────────────────────────────────────────────────────────
+static bool close_position_market(const Position& pos)
+{
+    // Determine closing side
+    std::string close_side;
+    if      (pos.entry_side == "buy")  close_side = "sell";
+    else if (pos.entry_side == "sell") close_side = "buy";
+    else                               close_side = (pos.size_raw > 0) ? "sell" : "buy";
+
+    // Contract count = |size_raw| directly (no multipliers, no contract_value division)
+    long long abs_contracts = std::abs(pos.size_raw);
+    if (abs_contracts <= 0) {
+        LOG_ERROR("Position " << pos.symbol << " has zero contracts (size_raw="
+                  << pos.size_raw << ") — skipping.");
+        return false;
+    }
+
+    json payload;
+    payload["product_id"]  = pos.product_id;
+    payload["size"]        = abs_contracts;   // <── long long integer, no float arithmetic
+    payload["side"]        = close_side;
+    payload["order_type"]  = "market_order";
+    payload["reduce_only"] = true;
+
+    std::string body = payload.dump();
+    std::string path = "/v2/orders";
+
+    for (int attempt = 1; attempt <= MAX_CLOSE_RETRIES; ++attempt)
+    {
+        auto auth = make_auth("POST", path, "", body);
+
+        if (attempt == 1)
+            LOG_INFO("Closing " << std::left << std::setw(20) << pos.symbol
+                     << " | contracts=" << abs_contracts
+                     << " | side=" << close_side
+                     << " | size_raw=" << pos.size_raw
+                     << " | market");
+        else
+            LOG_WARN("  Retry #" << attempt << " for " << pos.symbol);
+
+        std::string raw = http_post(BASE_URL + path, auth, body);
+
+        if (raw.empty()) {
+            LOG_ERROR("  Empty response (attempt " << attempt << ")");
+            if (attempt < MAX_CLOSE_RETRIES)
+                std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_DELAY_MS));
+            continue;
+        }
+
+        json resp;
+        try { resp = json::parse(raw); }
+        catch (...) {
+            LOG_ERROR("  JSON parse error (attempt " << attempt << "): " << raw);
+            if (attempt < MAX_CLOSE_RETRIES)
+                std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_DELAY_MS));
+            continue;
+        }
+
+        if (resp.value("success", false)) {
+            auto& r = resp["result"];
+            LOG_INFO("  OK  order_id=" << r.value("id", 0)
+                     << "  state=" << r.value("state", "?")
+                     << "  (attempt " << attempt << ")");
+            return true;
+        }
+
+        std::string err_code = extract_error_code(resp);
+        LOG_ERROR("  FAIL (attempt " << attempt << ") " << pos.symbol
+                  << " | code=" << err_code << " | " << raw);
+
+        if (is_permanent_error(err_code)) {
+            LOG_ERROR("  Permanent error (" << err_code
+                      << ") — aborting retries for " << pos.symbol);
+            return false;
+        }
+
+        if (attempt < MAX_CLOSE_RETRIES)
+            std::this_thread::sleep_for(std::chrono::milliseconds(RETRY_DELAY_MS));
+    }
+
+    LOG_ERROR("  All " << MAX_CLOSE_RETRIES
+              << " attempts failed for " << pos.symbol);
+    return false;
+}
+
+
+// ─────────────────────────────────────────────────────────────
+//  Master close: try native endpoint, then fall back per-position
+// ─────────────────────────────────────────────────────────────
+static void close_all_positions(const std::vector<Position>& positions)
+{
+    if (positions.empty()) { LOG_INFO("No open positions to close."); return; }
+
+    LOG_INFO("=== Closing " << positions.size() << " position(s) ===");
+
+    // ── Try native close-all first ──────────────────────────
+    if (try_close_all_native()) {
+        // Give exchange 1 second to process then verify
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        LOG_INFO("Native close-all sent. Positions should be closed.");
+        LOG_INFO("(Next cycle will confirm — any remaining will be caught.)");
+        return;
+    }
+
+    // ── Fallback: individual market orders with retry ────────
+    LOG_WARN("Native close-all failed. Falling back to per-position market orders.");
+    LOG_INFO("Max " << MAX_CLOSE_RETRIES << " attempts per position.");
+
+    int ok = 0, fail = 0;
+    for (const auto& p : positions) {
+        if (close_position_market(p)) ++ok; else ++fail;
+        if (&p != &positions.back())
+            std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    }
+
+    LOG_INFO("=== Result: " << ok << " closed  |  " << fail << " failed ===");
+
+    if (fail > 0) {
+        LOG_WARN("  " << fail << " position(s) could not be closed.");
+        LOG_WARN("  ACTION REQUIRED:");
+        LOG_WARN("    ip_not_whitelisted -> whitelist your IP in Delta Exchange:");
+        LOG_WARN("    Account > API Keys > Edit Key > add IP " );
+        LOG_WARN("    Then recompile/restart.");
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────
+//  IST time helpers
+// ─────────────────────────────────────────────────────────────
+struct ISTTime { int h, m, s, ms; };
+
+static ISTTime now_ist()
+{
+    auto now     = std::chrono::system_clock::now();
+    auto ms_part = std::chrono::duration_cast<std::chrono::milliseconds>(
+                       now.time_since_epoch()) % 1000;
+    std::time_t t = std::chrono::system_clock::to_time_t(now);
+    t += IST_OFFSET_SEC;
+    std::tm tm{};
+    GMTIME_SAFE(&tm, &t);
+    return { tm.tm_hour, tm.tm_min, tm.tm_sec, (int)ms_part.count() };
+}
+
+static std::string now_ist_str()
+{
+    auto now = std::chrono::system_clock::now();
+    auto ms  = std::chrono::duration_cast<std::chrono::milliseconds>(
+                   now.time_since_epoch()) % 1000;
+    std::time_t t = std::chrono::system_clock::to_time_t(now);
+    t += IST_OFFSET_SEC;
+    std::tm tm{};
+    GMTIME_SAFE(&tm, &t);
+    char buf[32];
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d  %H:%M:%S", &tm);
+    std::ostringstream oss;
+    oss << buf << "." << std::setw(3) << std::setfill('0') << ms.count();
+    return oss.str();
+}
+
+static long long ms_until(int th, int tm_, int ts, int tms)
+{
+    auto now_tp  = std::chrono::system_clock::now();
+    auto now_ms  = std::chrono::duration_cast<std::chrono::milliseconds>(
+                       now_tp.time_since_epoch()).count();
+    long long ist_ms    = now_ms + (long long)IST_OFFSET_SEC * 1000;
+    long long day_ms    = 86400LL * 1000;
+    long long since_mid = ist_ms % day_ms;
+    long long target    = ((long long)th * 3600 + tm_ * 60 + ts) * 1000 + tms;
+    long long diff      = target - since_mid;
+    if (diff < 0) diff += day_ms;
+    return diff;
+}
+
+static bool parse_time(const std::string& raw,
+                        int& h, int& m, int& s, int& ms,
+                        std::string& err)
+{
+    std::vector<std::string> parts;
+    std::stringstream ss(raw);
+    std::string token;
+    while (std::getline(ss, token, ':')) parts.push_back(token);
+
+    if (parts.size() != 4) { err = "Expected HH:MM:SS:ms (4 parts)."; return false; }
+    try { h = std::stoi(parts[0]); m = std::stoi(parts[1]);
+          s = std::stoi(parts[2]); ms = std::stoi(parts[3]); }
+    catch (...) { err = "All parts must be integers."; return false; }
+    if (h  < 0 || h  > 23)  { err = "Hour 0-23.";         return false; }
+    if (m  < 0 || m  > 59)  { err = "Minute 0-59.";       return false; }
+    if (s  < 0 || s  > 59)  { err = "Second 0-59.";       return false; }
+    if (ms < 0 || ms > 999) { err = "Millisecond 0-999."; return false; }
+    return true;
+}
+
+
+// ─────────────────────────────────────────────────────────────
+//  main  –  24/7 loop
+// ─────────────────────────────────────────────────────────────
+int main()
+{
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    int cycle = 0;
+
+    while (true)
+    {
+        ISTTime cur = now_ist();
+        std::ostringstream oss;
+        oss << std::setw(2) << std::setfill('0') << cur.h << ":29:59:200";
+        std::string input = oss.str();
+        ++cycle;
+
+        // Banner
+        std::cout << "\n" << std::string(62, '=') << "\n";
+        std::cout << "   Delta Exchange India  -  Auto Position Closer Bot\n";
+        std::cout << "   Cycle #" << cycle << "\n";
+        std::cout << std::string(62, '=') << "\n";
+        std::cout << "   Endpoint  : " << BASE_URL << "\n";
+        std::cout << "   Time (IST): " << now_ist_str() << "  (UTC+5:30)\n\n";
+
+        if (API_KEY.empty()) {
+            std::cout << "  Set API_KEY and API_SECRET at the top of the file.\n";
+            curl_global_cleanup();
+            return 1;
+        }
+
+        // ── STEP 1 : Fetch & display positions ───────────────
+        std::cout << "  Fetching open positions ...\n";
+        auto positions = get_open_positions();
+        display_positions(positions);
+
+        if (positions.empty()) {
+            std::cout << "  No open positions. Retrying in 3 seconds ...\n";
+            std::this_thread::sleep_for(std::chrono::seconds(3));
+            continue;
+        }
+
+        // ── STEP 2 : Ask for close time ───────────────────────
+        int th = -1, tm_ = -1, ts = -1, tms = -1;
+        std::cin.clear();
+
+        std::cout << "  Enter the time (IST) to close ALL positions.\n";
+        std::cout << "  Format  :  HH:MM:SS:ms  (24-hour, ms = 000-999)\n";
+        std::cout << "  Example :  "
+                  << std::setw(2) << std::setfill('0') << cur.h << ":"
+                  << std::setw(2) << std::setfill('0') << cur.m << ":"
+                  << std::setw(2) << std::setfill('0') << cur.s << ":500\n\n";
+
+        while (true) {
+            std::cout << "  Close time (HH:MM:SS:ms) -> ";
+            //std::string input;
+            //std::getline(std::cin, input);   // ← reads fresh input every cycle
+            std::string err;
+            if (parse_time(input, th, tm_, ts, tms, err)) break;
+            std::cout << "  Invalid: " << err << " -- please try again.\n\n";
+        }
+
+        long long wait_ms = ms_until(th, tm_, ts, tms);
+
+        std::ostringstream fire_oss;
+        fire_oss << std::setw(2) << std::setfill('0') << th << ":"
+                 << std::setw(2) << std::setfill('0') << tm_ << ":"
+                 << std::setw(2) << std::setfill('0') << ts  << ":"
+                 << std::setw(3) << std::setfill('0') << tms << "  IST";
+        if (wait_ms >= 86400000LL - 1000) fire_oss << "  (tomorrow)";
+
+        long long wait_s = wait_ms / 1000;
+        std::cout << "\n  Scheduled close  ->  " << fire_oss.str() << "\n";
+        std::cout << "  Waiting          ->  "
+                  << std::setw(2) << std::setfill('0') << wait_s / 3600 << "h "
+                  << std::setw(2) << std::setfill('0') << (wait_s % 3600) / 60 << "m "
+                  << std::setw(2) << std::setfill('0') << wait_s % 60 << "s\n\n";
+
+        // ── STEP 3 : Countdown ────────────────────────────────
+        while (true) {
+            long long remaining = ms_until(th, tm_, ts, tms);
+
+            if (remaining <= 50) {
+                std::cout << "\r" << std::string(60, ' ') << "\r";
+                LOG_INFO("Target time reached -- executing close now.");
+
+                // Re-fetch positions to get latest state before closing
+                auto live_positions = get_open_positions();
+                if (live_positions.empty()) {
+                    LOG_INFO("No open positions at execution time — nothing to close.");
+                } else {
+                    close_all_positions(live_positions);
+                }
+                std::cout << "\n  Cycle #" << cycle << " complete.\n";
+                break;
+            }
+
+            long long r_ms  = remaining % 1000;
+            long long r_tot = remaining / 1000;
+            std::cout << "\r  Closing in  ->  "
+                      << std::setw(2) << std::setfill('0') << r_tot / 3600 << ":"
+                      << std::setw(2) << std::setfill('0') << (r_tot / 60) % 60 << ":"
+                      << std::setw(2) << std::setfill('0') << r_tot % 60 << ":"
+                      << std::setw(3) << std::setfill('0') << r_ms
+                      << "   " << std::flush;
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+
+        std::cout << "  Next cycle starts in 2 seconds ...\n";
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+
+    } // end while(true)
+
+    curl_global_cleanup();
+    return 0;
+}
+
+
+
+
+

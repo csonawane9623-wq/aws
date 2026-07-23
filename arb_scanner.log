@@ -1,0 +1,990 @@
+10:03:15  INFO     ============================================================
+10:03:15  INFO       Binance <-> Delta Exchange India  |  Perp Spread Scanner
+10:03:15  INFO       Threshold: 5.0%  |  Interval: 15s
+10:03:15  INFO     ============================================================
+10:03:15  INFO     -- Scan @ 10:03:15  |  Common pairs: 180  --
+10:03:15  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:03:15  INFO     ------------------------------------------------------------
+10:03:15  INFO     1   1000SATS  -0.730%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:03:15  INFO     2   BEAT      -0.519%  $     2.5680  $     2.5814  BUY_BINANCE → SELL_DELTA
+10:03:15  INFO     3   SIGN      -0.481%  $     0.0085  $     0.0085  BUY_BINANCE → SELL_DELTA
+10:03:15  INFO     4   AIOT     +  0.479%  $     0.0493  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:03:15  INFO     5   ARIA     +  0.474%  $     0.0268  $     0.0267  BUY_DELTA  → SELL_BINANCE
+10:03:30  INFO     -- Scan @ 10:03:30  |  Common pairs: 180  --
+10:03:30  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:03:30  INFO     ------------------------------------------------------------
+10:03:30  INFO     1   SKYAI    +  1.003%  $     0.1279  $     0.1266  BUY_DELTA  → SELL_BINANCE
+10:03:30  INFO     2   1000SATS  -0.834%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:03:30  INFO     3   RAVE      -0.697%  $     0.3950  $     0.3978  BUY_BINANCE → SELL_DELTA
+10:03:30  INFO     4   ACT       -0.529%  $     0.0133  $     0.0133  BUY_BINANCE → SELL_DELTA
+10:03:30  INFO     5   SKL       -0.494%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:03:45  INFO     -- Scan @ 10:03:45  |  Common pairs: 180  --
+10:03:45  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:03:45  INFO     ------------------------------------------------------------
+10:03:45  INFO     1   1000SATS  -0.834%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:03:45  INFO     2   COOKIE    -0.555%  $     0.0087  $     0.0088  BUY_BINANCE → SELL_DELTA
+10:03:45  INFO     3   SKYAI    +  0.460%  $     0.1283  $     0.1277  BUY_DELTA  → SELL_BINANCE
+10:03:45  INFO     4   SKL       -0.454%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:03:45  INFO     5   AIOT     +  0.417%  $     0.0493  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:04:00  INFO     -- Scan @ 10:04:00  |  Common pairs: 180  --
+10:04:00  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:04:00  INFO     ------------------------------------------------------------
+10:04:00  INFO     1   1000SATS  -0.731%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:04:00  INFO     2   AIOT     +  0.520%  $     0.0494  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:04:00  INFO     3   SKL       -0.477%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:04:00  INFO     4   SKYAI     -0.471%  $     0.1278  $     0.1284  BUY_BINANCE → SELL_DELTA
+10:04:00  INFO     5   COOKIE    -0.434%  $     0.0087  $     0.0088  BUY_BINANCE → SELL_DELTA
+10:04:15  INFO     -- Scan @ 10:04:15  |  Common pairs: 180  --
+10:04:15  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:04:15  INFO     ------------------------------------------------------------
+10:04:15  INFO     1   1000SATS  -0.627%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:04:15  INFO     2   SKL       -0.550%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:04:15  INFO     3   AIOT     +  0.527%  $     0.0494  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:04:15  INFO     4   BEAT     +  0.494%  $     2.5730  $     2.5604  BUY_DELTA  → SELL_BINANCE
+10:04:15  INFO     5   DUSK      -0.440%  $     0.0790  $     0.0793  BUY_BINANCE → SELL_DELTA
+10:04:30  INFO     -- Scan @ 10:04:30  |  Common pairs: 180  --
+10:04:30  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:04:30  INFO     ------------------------------------------------------------
+10:04:30  INFO     1   1000SATS  -0.627%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:04:30  INFO     2   AIOT     +  0.542%  $     0.0494  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:04:30  INFO     3   SKL       -0.505%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:04:30  INFO     4   STBL     +  0.395%  $     0.0251  $     0.0250  BUY_DELTA  → SELL_BINANCE
+10:04:30  INFO     5   VELVET    -0.358%  $     1.6682  $     1.6742  BUY_BINANCE → SELL_DELTA
+10:04:46  INFO     -- Scan @ 10:04:46  |  Common pairs: 180  --
+10:04:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:04:46  INFO     ------------------------------------------------------------
+10:04:46  INFO     1   1000SATS  -0.937%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:04:46  INFO     2   AIOT     +  0.525%  $     0.0494  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:04:46  INFO     3   ARIA     +  0.424%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:04:46  INFO     4   SKL       -0.359%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:04:46  INFO     5   INIT      -0.335%  $     0.0536  $     0.0538  BUY_BINANCE → SELL_DELTA
+10:05:01  INFO     -- Scan @ 10:05:01  |  Common pairs: 180  --
+10:05:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:05:01  INFO     ------------------------------------------------------------
+10:05:01  INFO     1   1000SATS  -0.731%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:05:01  INFO     2   AIOT     +  0.560%  $     0.0494  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:05:01  INFO     3   STBL     +  0.413%  $     0.0251  $     0.0250  BUY_DELTA  → SELL_BINANCE
+10:05:01  INFO     4   LIT       -0.413%  $     1.7217  $     1.7288  BUY_BINANCE → SELL_DELTA
+10:05:01  INFO     5   AVAAI    +  0.370%  $     0.0053  $     0.0053  BUY_DELTA  → SELL_BINANCE
+10:05:16  INFO     -- Scan @ 10:05:16  |  Common pairs: 180  --
+10:05:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:05:16  INFO     ------------------------------------------------------------
+10:05:16  INFO     1   RAVE     +  1.999%  $     0.4014  $     0.3935  BUY_DELTA  → SELL_BINANCE
+10:05:16  INFO     2   1000SATS  -0.627%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:05:16  INFO     3   AIOT     +  0.608%  $     0.0494  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:05:16  INFO     4   ARIA     +  0.522%  $     0.0267  $     0.0265  BUY_DELTA  → SELL_BINANCE
+10:05:16  INFO     5   STBL     +  0.475%  $     0.0251  $     0.0250  BUY_DELTA  → SELL_BINANCE
+10:05:31  INFO     -- Scan @ 10:05:31  |  Common pairs: 180  --
+10:05:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:05:31  INFO     ------------------------------------------------------------
+10:05:31  INFO     1   RAVE      -0.585%  $     0.4011  $     0.4035  BUY_BINANCE → SELL_DELTA
+10:05:31  INFO     2   AIOT     +  0.530%  $     0.0494  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:05:31  INFO     3   ARIA     +  0.529%  $     0.0266  $     0.0265  BUY_DELTA  → SELL_BINANCE
+10:05:31  INFO     4   1000SATS  -0.523%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:05:31  INFO     5   INIT      -0.499%  $     0.0536  $     0.0538  BUY_BINANCE → SELL_DELTA
+10:05:46  INFO     -- Scan @ 10:05:46  |  Common pairs: 180  --
+10:05:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:05:46  INFO     ------------------------------------------------------------
+10:05:46  INFO     1   ARIA     +  0.588%  $     0.0266  $     0.0265  BUY_DELTA  → SELL_BINANCE
+10:05:46  INFO     2   STBL     +  0.576%  $     0.0251  $     0.0250  BUY_DELTA  → SELL_BINANCE
+10:05:46  INFO     3   AIOT     +  0.570%  $     0.0494  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:05:46  INFO     4   RAVE      -0.549%  $     0.4018  $     0.4040  BUY_BINANCE → SELL_DELTA
+10:05:46  INFO     5   1000SATS  -0.523%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:06:01  INFO     -- Scan @ 10:06:01  |  Common pairs: 180  --
+10:06:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:06:01  INFO     ------------------------------------------------------------
+10:06:01  INFO     1   INIT      -0.898%  $     0.0536  $     0.0541  BUY_BINANCE → SELL_DELTA
+10:06:01  INFO     2   1000SATS  -0.627%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:06:01  INFO     3   AIOT     +  0.559%  $     0.0494  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:06:01  INFO     4   RAVE      -0.524%  $     0.4018  $     0.4039  BUY_BINANCE → SELL_DELTA
+10:06:01  INFO     5   ARIA     +  0.500%  $     0.0267  $     0.0265  BUY_DELTA  → SELL_BINANCE
+10:06:16  INFO     -- Scan @ 10:06:16  |  Common pairs: 180  --
+10:06:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:06:16  INFO     ------------------------------------------------------------
+10:06:16  INFO     1   1000SATS  -0.834%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:06:16  INFO     2   INIT      -0.679%  $     0.0536  $     0.0540  BUY_BINANCE → SELL_DELTA
+10:06:16  INFO     3   AIOT     +  0.617%  $     0.0494  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:06:16  INFO     4   ARIA     +  0.521%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:06:16  INFO     5   RAVE      -0.463%  $     0.3996  $     0.4015  BUY_BINANCE → SELL_DELTA
+10:06:31  INFO     -- Scan @ 10:06:31  |  Common pairs: 180  --
+10:06:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:06:31  INFO     ------------------------------------------------------------
+10:06:31  INFO     1   AIOT     +  0.614%  $     0.0494  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:06:31  INFO     2   1000SATS  -0.522%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:06:31  INFO     3   FRAX      -0.496%  $     0.2363  $     0.2375  BUY_BINANCE → SELL_DELTA
+10:06:31  INFO     4   ARIA     +  0.490%  $     0.0267  $     0.0265  BUY_DELTA  → SELL_BINANCE
+10:06:31  INFO     5   INIT      -0.412%  $     0.0536  $     0.0538  BUY_BINANCE → SELL_DELTA
+10:06:46  INFO     -- Scan @ 10:06:46  |  Common pairs: 180  --
+10:06:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:06:46  INFO     ------------------------------------------------------------
+10:06:46  INFO     1   AIOT     +  0.586%  $     0.0494  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:06:46  INFO     2   1000SATS  -0.522%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:06:46  INFO     3   USUAL     -0.484%  $     0.0098  $     0.0098  BUY_BINANCE → SELL_DELTA
+10:06:46  INFO     4   SKL       -0.426%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:06:46  INFO     5   RAVE     +  0.425%  $     0.4024  $     0.4007  BUY_DELTA  → SELL_BINANCE
+10:07:01  INFO     -- Scan @ 10:07:01  |  Common pairs: 180  --
+10:07:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:07:01  INFO     ------------------------------------------------------------
+10:07:01  INFO     1   1000SATS  -0.627%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:07:01  INFO     2   AIOT     +  0.612%  $     0.0494  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:07:01  INFO     3   RAVE      -0.562%  $     0.3996  $     0.4019  BUY_BINANCE → SELL_DELTA
+10:07:01  INFO     4   USUAL     -0.506%  $     0.0098  $     0.0098  BUY_BINANCE → SELL_DELTA
+10:07:01  INFO     5   SKL       -0.503%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:07:16  INFO     -- Scan @ 10:07:16  |  Common pairs: 180  --
+10:07:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:07:16  INFO     ------------------------------------------------------------
+10:07:16  INFO     1   1000SATS  -0.731%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:07:16  INFO     2   SKL       -0.628%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:07:16  INFO     3   AIOT     +  0.416%  $     0.0493  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:07:16  INFO     4   ALT       -0.409%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:07:16  INFO     5   SUSHI     -0.328%  $     0.1501  $     0.1506  BUY_BINANCE → SELL_DELTA
+10:07:31  INFO     -- Scan @ 10:07:31  |  Common pairs: 180  --
+10:07:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:07:31  INFO     ------------------------------------------------------------
+10:07:31  INFO     1   1000SATS  -0.731%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:07:31  INFO     2   RAVE     +  0.591%  $     0.4055  $     0.4031  BUY_DELTA  → SELL_BINANCE
+10:07:31  INFO     3   SKL       -0.582%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:07:31  INFO     4   FRAX      -0.456%  $     0.2367  $     0.2378  BUY_BINANCE → SELL_DELTA
+10:07:31  INFO     5   AIOT     +  0.415%  $     0.0493  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:07:46  INFO     -- Scan @ 10:07:46  |  Common pairs: 180  --
+10:07:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:07:46  INFO     ------------------------------------------------------------
+10:07:46  INFO     1   ALT       -0.400%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:07:46  INFO     2   AIOT     +  0.381%  $     0.0493  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:07:46  INFO     3   SKL       -0.364%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:07:46  INFO     4   BEAT      -0.352%  $     2.5880  $     2.5971  BUY_BINANCE → SELL_DELTA
+10:07:46  INFO     5   FRAX      -0.342%  $     0.2364  $     0.2372  BUY_BINANCE → SELL_DELTA
+10:08:01  INFO     -- Scan @ 10:08:01  |  Common pairs: 180  --
+10:08:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:08:01  INFO     ------------------------------------------------------------
+10:08:01  INFO     1   ALT       -0.429%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:08:01  INFO     2   MOVE      -0.403%  $     0.0112  $     0.0112  BUY_BINANCE → SELL_DELTA
+10:08:01  INFO     3   FRAX      -0.382%  $     0.2362  $     0.2371  BUY_BINANCE → SELL_DELTA
+10:08:01  INFO     4   H         -0.367%  $     0.0602  $     0.0605  BUY_BINANCE → SELL_DELTA
+10:08:01  INFO     5   SKL       -0.354%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:08:16  INFO     -- Scan @ 10:08:16  |  Common pairs: 180  --
+10:08:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:08:16  INFO     ------------------------------------------------------------
+10:08:16  INFO     1   RAVE      -1.001%  $     0.4010  $     0.4051  BUY_BINANCE → SELL_DELTA
+10:08:16  INFO     2   ARIA     +  0.538%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:08:16  INFO     3   AIOT     +  0.526%  $     0.0493  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:08:16  INFO     4   H         -0.493%  $     0.0601  $     0.0604  BUY_BINANCE → SELL_DELTA
+10:08:16  INFO     5   ALT       -0.427%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:08:31  INFO     -- Scan @ 10:08:31  |  Common pairs: 180  --
+10:08:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:08:31  INFO     ------------------------------------------------------------
+10:08:31  INFO     1   RAVE     +  0.651%  $     0.4019  $     0.3993  BUY_DELTA  → SELL_BINANCE
+10:08:31  INFO     2   LAB       -0.566%  $    14.6670  $    14.7505  BUY_BINANCE → SELL_DELTA
+10:08:31  INFO     3   ALT       -0.565%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:08:31  INFO     4   SKL       -0.514%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:08:31  INFO     5   AIN      +  0.429%  $     0.0783  $     0.0780  BUY_DELTA  → SELL_BINANCE
+10:08:46  INFO     -- Scan @ 10:08:46  |  Common pairs: 180  --
+10:08:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:08:46  INFO     ------------------------------------------------------------
+10:08:46  INFO     1   LAB       -0.701%  $    14.6060  $    14.7091  BUY_BINANCE → SELL_DELTA
+10:08:46  INFO     2   SKL       -0.628%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:08:46  INFO     3   VANA      -0.513%  $     1.1360  $     1.1419  BUY_BINANCE → SELL_DELTA
+10:08:46  INFO     4   AIOT     +  0.475%  $     0.0493  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:08:46  INFO     5   ALT       -0.463%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:09:01  INFO     -- Scan @ 10:09:01  |  Common pairs: 180  --
+10:09:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:09:01  INFO     ------------------------------------------------------------
+10:09:01  INFO     1   SKL       -0.590%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:09:01  INFO     2   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:09:01  INFO     3   AIOT     +  0.457%  $     0.0493  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:09:01  INFO     4   RAVE     +  0.455%  $     0.4016  $     0.3998  BUY_DELTA  → SELL_BINANCE
+10:09:01  INFO     5   ALT       -0.371%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:09:16  INFO     -- Scan @ 10:09:16  |  Common pairs: 180  --
+10:09:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:09:16  INFO     ------------------------------------------------------------
+10:09:16  INFO     1   SKL       -0.643%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:09:16  INFO     2   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:09:16  INFO     3   M        +  0.451%  $     0.6039  $     0.6012  BUY_DELTA  → SELL_BINANCE
+10:09:16  INFO     4   ALT       -0.399%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:09:16  INFO     5   PIEVERSE  -0.353%  $     0.7211  $     0.7237  BUY_BINANCE → SELL_DELTA
+10:09:31  INFO     -- Scan @ 10:09:31  |  Common pairs: 180  --
+10:09:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:09:31  INFO     ------------------------------------------------------------
+10:09:31  INFO     1   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:09:31  INFO     2   SKL       -0.548%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:09:31  INFO     3   COOKIE    -0.350%  $     0.0088  $     0.0088  BUY_BINANCE → SELL_DELTA
+10:09:31  INFO     4   STBL     +  0.319%  $     0.0251  $     0.0251  BUY_DELTA  → SELL_BINANCE
+10:09:31  INFO     5   SWARMS   +  0.309%  $     0.0070  $     0.0070  BUY_DELTA  → SELL_BINANCE
+10:09:46  INFO     -- Scan @ 10:09:46  |  Common pairs: 180  --
+10:09:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:09:46  INFO     ------------------------------------------------------------
+10:09:46  INFO     1   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:09:46  INFO     2   SKL       -0.535%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:09:46  INFO     3   STBL     +  0.377%  $     0.0252  $     0.0251  BUY_DELTA  → SELL_BINANCE
+10:09:46  INFO     4   AIN      +  0.368%  $     0.0783  $     0.0780  BUY_DELTA  → SELL_BINANCE
+10:09:46  INFO     5   RED       -0.316%  $     0.0919  $     0.0922  BUY_BINANCE → SELL_DELTA
+10:10:01  INFO     -- Scan @ 10:10:01  |  Common pairs: 180  --
+10:10:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:10:01  INFO     ------------------------------------------------------------
+10:10:01  INFO     1   AVAAI    +  0.372%  $     0.0053  $     0.0053  BUY_DELTA  → SELL_BINANCE
+10:10:01  INFO     2   AIN      +  0.356%  $     0.0782  $     0.0780  BUY_DELTA  → SELL_BINANCE
+10:10:01  INFO     3   AIOT     +  0.338%  $     0.0493  $     0.0491  BUY_DELTA  → SELL_BINANCE
+10:10:01  INFO     4   SKL       -0.329%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:10:01  INFO     5   1000SATS  -0.315%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:10:16  INFO     -- Scan @ 10:10:16  |  Common pairs: 180  --
+10:10:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:10:16  INFO     ------------------------------------------------------------
+10:10:16  INFO     1   RAVE      -0.672%  $     0.3989  $     0.4016  BUY_BINANCE → SELL_DELTA
+10:10:16  INFO     2   STBL     +  0.437%  $     0.0252  $     0.0251  BUY_DELTA  → SELL_BINANCE
+10:10:16  INFO     3   1000SATS  -0.419%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:10:16  INFO     4   ARIA     +  0.367%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:10:16  INFO     5   KSM       -0.337%  $     3.0310  $     3.0413  BUY_BINANCE → SELL_DELTA
+10:10:31  INFO     -- Scan @ 10:10:31  |  Common pairs: 180  --
+10:10:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:10:31  INFO     ------------------------------------------------------------
+10:10:31  INFO     1   OPN       -0.632%  $     0.0630  $     0.0635  BUY_BINANCE → SELL_DELTA
+10:10:31  INFO     2   ALT       -0.371%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:10:31  INFO     3   STBL     +  0.365%  $     0.0252  $     0.0251  BUY_DELTA  → SELL_BINANCE
+10:10:31  INFO     4   EDEN      -0.331%  $     0.0464  $     0.0465  BUY_BINANCE → SELL_DELTA
+10:10:31  INFO     5   AIOT     +  0.302%  $     0.0493  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:10:46  INFO     -- Scan @ 10:10:46  |  Common pairs: 180  --
+10:10:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:10:46  INFO     ------------------------------------------------------------
+10:10:46  INFO     1   EDEN      -0.507%  $     0.0463  $     0.0465  BUY_BINANCE → SELL_DELTA
+10:10:46  INFO     2   JASMY     -0.462%  $     0.0044  $     0.0044  BUY_BINANCE → SELL_DELTA
+10:10:46  INFO     3   1000SATS  -0.419%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:10:46  INFO     4   OPN       -0.392%  $     0.0630  $     0.0633  BUY_BINANCE → SELL_DELTA
+10:10:46  INFO     5   INIT      -0.369%  $     0.0536  $     0.0538  BUY_BINANCE → SELL_DELTA
+10:11:01  INFO     -- Scan @ 10:11:01  |  Common pairs: 180  --
+10:11:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:11:01  INFO     ------------------------------------------------------------
+10:11:01  INFO     1   ALT       -0.435%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:11:01  INFO     2   1000SATS  -0.419%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:11:01  INFO     3   MOVE      -0.394%  $     0.0112  $     0.0112  BUY_BINANCE → SELL_DELTA
+10:11:01  INFO     4   OPN       -0.384%  $     0.0630  $     0.0632  BUY_BINANCE → SELL_DELTA
+10:11:01  INFO     5   LAYER     -0.382%  $     0.0662  $     0.0665  BUY_BINANCE → SELL_DELTA
+10:11:16  INFO     -- Scan @ 10:11:16  |  Common pairs: 180  --
+10:11:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:11:16  INFO     ------------------------------------------------------------
+10:11:16  INFO     1   SUSHI     -0.378%  $     0.1502  $     0.1508  BUY_BINANCE → SELL_DELTA
+10:11:16  INFO     2   AIOT     +  0.345%  $     0.0493  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:11:16  INFO     3   MOVE      -0.336%  $     0.0112  $     0.0112  BUY_BINANCE → SELL_DELTA
+10:11:16  INFO     4   INIT      -0.334%  $     0.0536  $     0.0538  BUY_BINANCE → SELL_DELTA
+10:11:16  INFO     5   SKL      +  0.328%  $     0.0036  $     0.0036  BUY_DELTA  → SELL_BINANCE
+10:11:31  INFO     -- Scan @ 10:11:31  |  Common pairs: 180  --
+10:11:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:11:31  INFO     ------------------------------------------------------------
+10:11:31  INFO     1   AIOT     +  0.446%  $     0.0494  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:11:31  INFO     2   INIT      -0.426%  $     0.0535  $     0.0537  BUY_BINANCE → SELL_DELTA
+10:11:31  INFO     3   RAVE      -0.420%  $     0.4006  $     0.4023  BUY_BINANCE → SELL_DELTA
+10:11:31  INFO     4   SAHARA    -0.415%  $     0.0109  $     0.0109  BUY_BINANCE → SELL_DELTA
+10:11:31  INFO     5   LIGHT     -0.373%  $     0.1283  $     0.1288  BUY_BINANCE → SELL_DELTA
+10:11:46  INFO     -- Scan @ 10:11:46  |  Common pairs: 180  --
+10:11:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:11:46  INFO     ------------------------------------------------------------
+10:11:46  INFO     1   AIOT     +  0.435%  $     0.0494  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:11:46  INFO     2   PIPPIN    -0.414%  $     0.0172  $     0.0173  BUY_BINANCE → SELL_DELTA
+10:11:46  INFO     3   STBL     +  0.366%  $     0.0252  $     0.0251  BUY_DELTA  → SELL_BINANCE
+10:11:46  INFO     4   HIVE      -0.347%  $     0.0508  $     0.0509  BUY_BINANCE → SELL_DELTA
+10:11:46  INFO     5   GOAT      -0.344%  $     0.0133  $     0.0133  BUY_BINANCE → SELL_DELTA
+10:12:01  INFO     -- Scan @ 10:12:01  |  Common pairs: 180  --
+10:12:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:12:01  INFO     ------------------------------------------------------------
+10:12:01  INFO     1   H         -0.417%  $     0.0600  $     0.0603  BUY_BINANCE → SELL_DELTA
+10:12:01  INFO     2   MON       -0.403%  $     0.0189  $     0.0189  BUY_BINANCE → SELL_DELTA
+10:12:01  INFO     3   AIN      +  0.356%  $     0.0784  $     0.0782  BUY_DELTA  → SELL_BINANCE
+10:12:01  INFO     4   MOVE      -0.350%  $     0.0112  $     0.0112  BUY_BINANCE → SELL_DELTA
+10:12:01  INFO     5   PROVE     -0.347%  $     0.1916  $     0.1923  BUY_BINANCE → SELL_DELTA
+10:12:16  INFO     -- Scan @ 10:12:16  |  Common pairs: 180  --
+10:12:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:12:16  INFO     ------------------------------------------------------------
+10:12:16  INFO     1   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:12:16  INFO     2   AIOT     +  0.445%  $     0.0494  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:12:16  INFO     3   ARIA     +  0.433%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:12:16  INFO     4   BEAT      -0.381%  $     2.6080  $     2.6180  BUY_BINANCE → SELL_DELTA
+10:12:16  INFO     5   LIGHT    +  0.353%  $     0.1283  $     0.1278  BUY_DELTA  → SELL_BINANCE
+10:12:31  INFO     -- Scan @ 10:12:31  |  Common pairs: 180  --
+10:12:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:12:31  INFO     ------------------------------------------------------------
+10:12:31  INFO     1   RAVE      -0.600%  $     0.4037  $     0.4061  BUY_BINANCE → SELL_DELTA
+10:12:31  INFO     2   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:12:31  INFO     3   AIOT     +  0.449%  $     0.0494  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:12:31  INFO     4   ARIA     +  0.429%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:12:31  INFO     5   S         -0.372%  $     0.0242  $     0.0243  BUY_BINANCE → SELL_DELTA
+10:12:46  INFO     -- Scan @ 10:12:46  |  Common pairs: 180  --
+10:12:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:12:46  INFO     ------------------------------------------------------------
+10:12:46  INFO     1   ARIA     +  0.492%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:12:46  INFO     2   MELANIA   -0.466%  $     0.0750  $     0.0754  BUY_BINANCE → SELL_DELTA
+10:12:46  INFO     3   NOT      +  0.463%  $     0.0004  $     0.0004  BUY_DELTA  → SELL_BINANCE
+10:12:46  INFO     4   1000SATS  -0.419%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:12:46  INFO     5   AIOT     +  0.392%  $     0.0494  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:13:01  INFO     -- Scan @ 10:13:01  |  Common pairs: 180  --
+10:13:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:13:01  INFO     ------------------------------------------------------------
+10:13:01  INFO     1   1000SATS  -0.626%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:13:01  INFO     2   ARIA     +  0.395%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:13:01  INFO     3   AIOT     +  0.390%  $     0.0494  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:13:01  INFO     4   SUSHI     -0.313%  $     0.1503  $     0.1508  BUY_BINANCE → SELL_DELTA
+10:13:01  INFO     5   MELANIA   -0.306%  $     0.0750  $     0.0753  BUY_BINANCE → SELL_DELTA
+10:13:16  INFO     -- Scan @ 10:13:16  |  Common pairs: 180  --
+10:13:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:13:16  INFO     ------------------------------------------------------------
+10:13:16  INFO     1   1000SATS  -0.522%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:13:16  INFO     2   AIOT     +  0.464%  $     0.0495  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:13:16  INFO     3   LAB       -0.409%  $    14.9160  $    14.9773  BUY_BINANCE → SELL_DELTA
+10:13:16  INFO     4   STBL     +  0.367%  $     0.0252  $     0.0251  BUY_DELTA  → SELL_BINANCE
+10:13:16  INFO     5   ALT       -0.360%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:13:31  INFO     -- Scan @ 10:13:31  |  Common pairs: 180  --
+10:13:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:13:31  INFO     ------------------------------------------------------------
+10:13:31  INFO     1   1000SATS  -0.834%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:13:31  INFO     2   AIOT     +  0.491%  $     0.0495  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:13:31  INFO     3   VANA      -0.407%  $     1.1300  $     1.1346  BUY_BINANCE → SELL_DELTA
+10:13:31  INFO     4   FRAX      -0.376%  $     0.2364  $     0.2373  BUY_BINANCE → SELL_DELTA
+10:13:31  INFO     5   ALT       -0.344%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:13:46  INFO     -- Scan @ 10:13:46  |  Common pairs: 180  --
+10:13:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:13:46  INFO     ------------------------------------------------------------
+10:13:46  INFO     1   1000SATS  -0.730%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:13:46  INFO     2   PNUT     +  0.512%  $     0.0441  $     0.0438  BUY_DELTA  → SELL_BINANCE
+10:13:46  INFO     3   AIOT     +  0.471%  $     0.0495  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:13:46  INFO     4   LAB       -0.416%  $    14.8970  $    14.9593  BUY_BINANCE → SELL_DELTA
+10:13:46  INFO     5   BASED     -0.348%  $     0.0816  $     0.0818  BUY_BINANCE → SELL_DELTA
+10:14:02  INFO     -- Scan @ 10:14:02  |  Common pairs: 180  --
+10:14:02  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:14:02  INFO     ------------------------------------------------------------
+10:14:02  INFO     1   1000SATS  -0.833%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:14:02  INFO     2   AIOT     +  0.539%  $     0.0495  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:14:02  INFO     3   AIN      +  0.436%  $     0.0787  $     0.0784  BUY_DELTA  → SELL_BINANCE
+10:14:02  INFO     4   SKL       -0.365%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:14:02  INFO     5   SUSHI     -0.345%  $     0.1502  $     0.1507  BUY_BINANCE → SELL_DELTA
+10:14:16  INFO     -- Scan @ 10:14:16  |  Common pairs: 180  --
+10:14:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:14:16  INFO     ------------------------------------------------------------
+10:14:16  INFO     1   1000SATS  -0.937%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:14:16  INFO     2   RAVE      -0.636%  $     0.4003  $     0.4029  BUY_BINANCE → SELL_DELTA
+10:14:16  INFO     3   AIOT     +  0.538%  $     0.0495  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:14:16  INFO     4   H         -0.517%  $     0.0601  $     0.0604  BUY_BINANCE → SELL_DELTA
+10:14:16  INFO     5   LAB       -0.493%  $    14.8450  $    14.9186  BUY_BINANCE → SELL_DELTA
+10:14:31  INFO     -- Scan @ 10:14:31  |  Common pairs: 180  --
+10:14:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:14:31  INFO     ------------------------------------------------------------
+10:14:31  INFO     1   1000SATS  -0.937%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:14:31  INFO     2   AIOT     +  0.544%  $     0.0495  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:14:31  INFO     3   SKL       -0.492%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:14:31  INFO     4   M        +  0.485%  $     0.5951  $     0.5922  BUY_DELTA  → SELL_BINANCE
+10:14:31  INFO     5   RAVE     +  0.422%  $     0.4017  $     0.4000  BUY_DELTA  → SELL_BINANCE
+10:14:46  INFO     -- Scan @ 10:14:46  |  Common pairs: 180  --
+10:14:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:14:46  INFO     ------------------------------------------------------------
+10:14:46  INFO     1   1000SATS  -0.937%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:14:46  INFO     2   AIOT     +  0.483%  $     0.0495  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:14:46  INFO     3   SKL       -0.471%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:14:46  INFO     4   ALT       -0.409%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:14:46  INFO     5   AIN      +  0.384%  $     0.0786  $     0.0783  BUY_DELTA  → SELL_BINANCE
+10:15:02  INFO     -- Scan @ 10:15:02  |  Common pairs: 180  --
+10:15:02  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:15:02  INFO     ------------------------------------------------------------
+10:15:02  INFO     1   1000SATS  -0.937%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:15:02  INFO     2   AIOT     +  0.495%  $     0.0495  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:15:02  INFO     3   SKL       -0.488%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:15:02  INFO     4   USUAL     -0.487%  $     0.0098  $     0.0098  BUY_BINANCE → SELL_DELTA
+10:15:02  INFO     5   ALT       -0.457%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:15:16  INFO     -- Scan @ 10:15:16  |  Common pairs: 180  --
+10:15:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:15:16  INFO     ------------------------------------------------------------
+10:15:16  INFO     1   1000SATS  -0.937%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:15:16  INFO     2   SKL       -0.596%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:15:16  INFO     3   ALT       -0.409%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:15:16  INFO     4   AIOT     +  0.390%  $     0.0494  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:15:16  INFO     5   STBL     +  0.320%  $     0.0252  $     0.0252  BUY_DELTA  → SELL_BINANCE
+10:15:31  INFO     -- Scan @ 10:15:31  |  Common pairs: 180  --
+10:15:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:15:31  INFO     ------------------------------------------------------------
+10:15:31  INFO     1   1000SATS  -0.937%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:15:31  INFO     2   SKL       -0.630%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:15:31  INFO     3   AIOT     +  0.561%  $     0.0495  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:15:31  INFO     4   USUAL     -0.452%  $     0.0097  $     0.0098  BUY_BINANCE → SELL_DELTA
+10:15:31  INFO     5   AIO      +  0.424%  $     0.0940  $     0.0936  BUY_DELTA  → SELL_BINANCE
+10:15:46  INFO     -- Scan @ 10:15:46  |  Common pairs: 180  --
+10:15:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:15:46  INFO     ------------------------------------------------------------
+10:15:46  INFO     1   1000SATS  -0.937%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:15:46  INFO     2   SKL       -0.698%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:15:46  INFO     3   AIOT     +  0.531%  $     0.0495  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:15:46  INFO     4   IO        -0.395%  $     0.1700  $     0.1707  BUY_BINANCE → SELL_DELTA
+10:15:46  INFO     5   TNSR      -0.368%  $     0.0345  $     0.0347  BUY_BINANCE → SELL_DELTA
+10:16:01  INFO     -- Scan @ 10:16:01  |  Common pairs: 180  --
+10:16:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:16:01  INFO     ------------------------------------------------------------
+10:16:01  INFO     1   1000SATS  -0.731%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:16:01  INFO     2   SKL       -0.706%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:16:01  INFO     3   ACT       -0.577%  $     0.0133  $     0.0133  BUY_BINANCE → SELL_DELTA
+10:16:01  INFO     4   AIOT     +  0.524%  $     0.0495  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:16:01  INFO     5   SUSHI     -0.371%  $     0.1500  $     0.1506  BUY_BINANCE → SELL_DELTA
+10:16:16  INFO     -- Scan @ 10:16:16  |  Common pairs: 180  --
+10:16:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:16:16  INFO     ------------------------------------------------------------
+10:16:16  INFO     1   DOGS     +  0.738%  $     0.0000  $     0.0000  BUY_DELTA  → SELL_BINANCE
+10:16:16  INFO     2   1000SATS  -0.731%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:16:16  INFO     3   SKL       -0.679%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:16:16  INFO     4   AIOT     +  0.438%  $     0.0494  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:16:16  INFO     5   IO        -0.373%  $     0.1700  $     0.1706  BUY_BINANCE → SELL_DELTA
+10:16:31  INFO     -- Scan @ 10:16:31  |  Common pairs: 180  --
+10:16:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:16:31  INFO     ------------------------------------------------------------
+10:16:31  INFO     1   1000SATS  -0.732%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:16:31  INFO     2   SKL       -0.713%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:16:31  INFO     3   USUAL     -0.419%  $     0.0097  $     0.0098  BUY_BINANCE → SELL_DELTA
+10:16:31  INFO     4   SAHARA    -0.406%  $     0.0109  $     0.0109  BUY_BINANCE → SELL_DELTA
+10:16:31  INFO     5   STBL     +  0.388%  $     0.0252  $     0.0251  BUY_DELTA  → SELL_BINANCE
+10:16:46  INFO     -- Scan @ 10:16:46  |  Common pairs: 180  --
+10:16:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:16:46  INFO     ------------------------------------------------------------
+10:16:46  INFO     1   SKL       -0.657%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:16:46  INFO     2   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:16:46  INFO     3   STBL     +  0.461%  $     0.0252  $     0.0251  BUY_DELTA  → SELL_BINANCE
+10:16:46  INFO     4   AIOT     +  0.459%  $     0.0494  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:16:46  INFO     5   M        +  0.418%  $     0.5929  $     0.5904  BUY_DELTA  → SELL_BINANCE
+10:17:01  INFO     -- Scan @ 10:17:01  |  Common pairs: 180  --
+10:17:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:17:01  INFO     ------------------------------------------------------------
+10:17:01  INFO     1   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:17:01  INFO     2   SKL       -0.628%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:17:01  INFO     3   AIOT     +  0.452%  $     0.0494  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:17:01  INFO     4   STBL     +  0.399%  $     0.0252  $     0.0251  BUY_DELTA  → SELL_BINANCE
+10:17:01  INFO     5   LIGHT     -0.361%  $     0.1285  $     0.1290  BUY_BINANCE → SELL_DELTA
+10:17:16  INFO     -- Scan @ 10:17:16  |  Common pairs: 180  --
+10:17:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:17:16  INFO     ------------------------------------------------------------
+10:17:16  INFO     1   AIN       -1.013%  $     0.0801  $     0.0809  BUY_BINANCE → SELL_DELTA
+10:17:16  INFO     2   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:17:16  INFO     3   SKL       -0.549%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:17:16  INFO     4   AIOT     +  0.356%  $     0.0494  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:17:16  INFO     5   ALT       -0.345%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:17:32  INFO     -- Scan @ 10:17:32  |  Common pairs: 180  --
+10:17:32  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:17:32  INFO     ------------------------------------------------------------
+10:17:32  INFO     1   AIN      +  0.658%  $     0.0806  $     0.0801  BUY_DELTA  → SELL_BINANCE
+10:17:32  INFO     2   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:17:32  INFO     3   ALT       -0.494%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:17:32  INFO     4   SKL       -0.407%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:17:32  INFO     5   AIOT     +  0.331%  $     0.0494  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:17:46  INFO     -- Scan @ 10:17:46  |  Common pairs: 180  --
+10:17:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:17:46  INFO     ------------------------------------------------------------
+10:17:46  INFO     1   RAVE      -0.709%  $     0.3964  $     0.3992  BUY_BINANCE → SELL_DELTA
+10:17:46  INFO     2   EDEN      -0.703%  $     0.0464  $     0.0467  BUY_BINANCE → SELL_DELTA
+10:17:46  INFO     3   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:17:46  INFO     4   AIOT     +  0.388%  $     0.0494  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:17:46  INFO     5   STBL     +  0.345%  $     0.0253  $     0.0252  BUY_DELTA  → SELL_BINANCE
+10:18:01  INFO     -- Scan @ 10:18:01  |  Common pairs: 180  --
+10:18:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:18:01  INFO     ------------------------------------------------------------
+10:18:01  INFO     1   EDEN      -0.552%  $     0.0464  $     0.0466  BUY_BINANCE → SELL_DELTA
+10:18:01  INFO     2   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:18:01  INFO     3   AIOT     +  0.378%  $     0.0494  $     0.0492  BUY_DELTA  → SELL_BINANCE
+10:18:01  INFO     4   M        +  0.372%  $     0.5955  $     0.5933  BUY_DELTA  → SELL_BINANCE
+10:18:01  INFO     5   RAVE     +  0.350%  $     0.3982  $     0.3968  BUY_DELTA  → SELL_BINANCE
+10:18:16  INFO     -- Scan @ 10:18:16  |  Common pairs: 180  --
+10:18:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:18:16  INFO     ------------------------------------------------------------
+10:18:16  INFO     1   AIN       -0.604%  $     0.0808  $     0.0813  BUY_BINANCE → SELL_DELTA
+10:18:16  INFO     2   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:18:16  INFO     3   AIGENSYN  -0.466%  $     0.0229  $     0.0230  BUY_BINANCE → SELL_DELTA
+10:18:16  INFO     4   SKL       -0.401%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:18:16  INFO     5   STBL     +  0.370%  $     0.0253  $     0.0252  BUY_DELTA  → SELL_BINANCE
+10:18:31  INFO     -- Scan @ 10:18:31  |  Common pairs: 180  --
+10:18:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:18:31  INFO     ------------------------------------------------------------
+10:18:31  INFO     1   LIGHT    +  0.475%  $     0.1280  $     0.1274  BUY_DELTA  → SELL_BINANCE
+10:18:31  INFO     2   SKL       -0.438%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:18:31  INFO     3   ARIA     +  0.417%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:18:31  INFO     4   ACT       -0.369%  $     0.0132  $     0.0132  BUY_BINANCE → SELL_DELTA
+10:18:31  INFO     5   MMT       -0.341%  $     0.1808  $     0.1814  BUY_BINANCE → SELL_DELTA
+10:18:46  INFO     -- Scan @ 10:18:46  |  Common pairs: 180  --
+10:18:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:18:46  INFO     ------------------------------------------------------------
+10:18:46  INFO     1   SKL       -0.460%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:18:46  INFO     2   ARIA     +  0.434%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:18:46  INFO     3   STBL     +  0.393%  $     0.0253  $     0.0252  BUY_DELTA  → SELL_BINANCE
+10:18:46  INFO     4   SAHARA    -0.380%  $     0.0109  $     0.0109  BUY_BINANCE → SELL_DELTA
+10:18:46  INFO     5   ALT       -0.362%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:19:01  INFO     -- Scan @ 10:19:01  |  Common pairs: 180  --
+10:19:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:19:01  INFO     ------------------------------------------------------------
+10:19:01  INFO     1   RAVE      -0.573%  $     0.4026  $     0.4049  BUY_BINANCE → SELL_DELTA
+10:19:01  INFO     2   SKL       -0.500%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:19:01  INFO     3   ARIA     +  0.434%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:19:01  INFO     4   USUAL     -0.387%  $     0.0096  $     0.0097  BUY_BINANCE → SELL_DELTA
+10:19:01  INFO     5   ALT       -0.343%  $     0.0058  $     0.0059  BUY_BINANCE → SELL_DELTA
+10:19:16  INFO     -- Scan @ 10:19:16  |  Common pairs: 180  --
+10:19:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:19:16  INFO     ------------------------------------------------------------
+10:19:16  INFO     1   SKL       -0.553%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:19:16  INFO     2   SWARMS   +  0.507%  $     0.0069  $     0.0069  BUY_DELTA  → SELL_BINANCE
+10:19:16  INFO     3   ARIA     +  0.450%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:19:16  INFO     4   1000SATS  -0.419%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:19:16  INFO     5   AVAAI    +  0.357%  $     0.0053  $     0.0053  BUY_DELTA  → SELL_BINANCE
+10:19:31  INFO     -- Scan @ 10:19:31  |  Common pairs: 180  --
+10:19:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:19:31  INFO     ------------------------------------------------------------
+10:19:31  INFO     1   SKL       -0.576%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:19:31  INFO     2   ARIA     +  0.574%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:19:31  INFO     3   AVAAI    +  0.446%  $     0.0053  $     0.0053  BUY_DELTA  → SELL_BINANCE
+10:19:31  INFO     4   STBL     +  0.424%  $     0.0253  $     0.0252  BUY_DELTA  → SELL_BINANCE
+10:19:31  INFO     5   SWARMS   +  0.423%  $     0.0069  $     0.0069  BUY_DELTA  → SELL_BINANCE
+10:19:46  INFO     -- Scan @ 10:19:46  |  Common pairs: 180  --
+10:19:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:19:46  INFO     ------------------------------------------------------------
+10:19:46  INFO     1   SKL       -0.633%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:19:46  INFO     2   STBL     +  0.497%  $     0.0253  $     0.0252  BUY_DELTA  → SELL_BINANCE
+10:19:46  INFO     3   ARIA     +  0.423%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:19:46  INFO     4   1000SATS  -0.419%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:19:46  INFO     5   SEI       -0.313%  $     0.0503  $     0.0505  BUY_BINANCE → SELL_DELTA
+10:20:01  INFO     -- Scan @ 10:20:01  |  Common pairs: 180  --
+10:20:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:20:01  INFO     ------------------------------------------------------------
+10:20:01  INFO     1   SKL       -0.589%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:20:01  INFO     2   STBL     +  0.519%  $     0.0253  $     0.0251  BUY_DELTA  → SELL_BINANCE
+10:20:01  INFO     3   ARIA     +  0.459%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:20:01  INFO     4   1000SATS  -0.419%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:20:01  INFO     5   SWARMS   +  0.392%  $     0.0070  $     0.0069  BUY_DELTA  → SELL_BINANCE
+10:20:17  INFO     -- Scan @ 10:20:17  |  Common pairs: 180  --
+10:20:17  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:20:17  INFO     ------------------------------------------------------------
+10:20:17  INFO     1   1000SATS  -0.731%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:20:17  INFO     2   SKL       -0.611%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:20:17  INFO     3   ACT       -0.514%  $     0.0132  $     0.0133  BUY_BINANCE → SELL_DELTA
+10:20:17  INFO     4   ARIA     +  0.490%  $     0.0268  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:20:17  INFO     5   DUSK      -0.409%  $     0.0789  $     0.0792  BUY_BINANCE → SELL_DELTA
+10:20:31  INFO     -- Scan @ 10:20:31  |  Common pairs: 180  --
+10:20:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:20:31  INFO     ------------------------------------------------------------
+10:20:31  INFO     1   BEAT      -0.689%  $     2.6080  $     2.6261  BUY_BINANCE → SELL_DELTA
+10:20:31  INFO     2   1000SATS  -0.627%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:20:31  INFO     3   SKL       -0.608%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:20:31  INFO     4   ARIA     +  0.512%  $     0.0268  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:20:31  INFO     5   LAB       -0.466%  $    14.7110  $    14.7799  BUY_BINANCE → SELL_DELTA
+10:20:46  INFO     -- Scan @ 10:20:46  |  Common pairs: 180  --
+10:20:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:20:46  INFO     ------------------------------------------------------------
+10:20:46  INFO     1   1000SATS  -0.627%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:20:46  INFO     2   SKL       -0.599%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:20:46  INFO     3   ARIA     +  0.522%  $     0.0268  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:20:46  INFO     4   RAVE     +  0.362%  $     0.4028  $     0.4013  BUY_DELTA  → SELL_BINANCE
+10:20:46  INFO     5   STBL     +  0.358%  $     0.0253  $     0.0252  BUY_DELTA  → SELL_BINANCE
+10:21:01  INFO     -- Scan @ 10:21:01  |  Common pairs: 180  --
+10:21:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:21:01  INFO     ------------------------------------------------------------
+10:21:01  INFO     1   ARIA     +  0.590%  $     0.0268  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:21:01  INFO     2   SKL       -0.558%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:21:01  INFO     3   1000SATS  -0.523%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:21:01  INFO     4   SAHARA    -0.394%  $     0.0109  $     0.0109  BUY_BINANCE → SELL_DELTA
+10:21:01  INFO     5   ACT      +  0.310%  $     0.0133  $     0.0133  BUY_DELTA  → SELL_BINANCE
+10:21:16  INFO     -- Scan @ 10:21:16  |  Common pairs: 180  --
+10:21:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:21:16  INFO     ------------------------------------------------------------
+10:21:16  INFO     1   ARIA     +  0.713%  $     0.0268  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:21:16  INFO     2   SKL       -0.529%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:21:16  INFO     3   RAVE      -0.489%  $     0.4002  $     0.4022  BUY_BINANCE → SELL_DELTA
+10:21:16  INFO     4   BEAT      -0.471%  $     2.6260  $     2.6384  BUY_BINANCE → SELL_DELTA
+10:21:16  INFO     5   STBL     +  0.458%  $     0.0253  $     0.0252  BUY_DELTA  → SELL_BINANCE
+10:21:31  INFO     -- Scan @ 10:21:31  |  Common pairs: 180  --
+10:21:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:21:31  INFO     ------------------------------------------------------------
+10:21:31  INFO     1   1000SATS  -0.731%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:21:31  INFO     2   LAB      +  0.612%  $    14.8090  $    14.7190  BUY_DELTA  → SELL_BINANCE
+10:21:31  INFO     3   SKL       -0.536%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:21:31  INFO     4   ARIA     +  0.518%  $     0.0268  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:21:31  INFO     5   STBL     +  0.344%  $     0.0253  $     0.0252  BUY_DELTA  → SELL_BINANCE
+10:21:46  INFO     -- Scan @ 10:21:46  |  Common pairs: 180  --
+10:21:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:21:46  INFO     ------------------------------------------------------------
+10:21:46  INFO     1   1000SATS  -0.731%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:21:46  INFO     2   ARIA     +  0.636%  $     0.0268  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:21:46  INFO     3   SKL       -0.518%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:21:46  INFO     4   STBL     +  0.496%  $     0.0253  $     0.0252  BUY_DELTA  → SELL_BINANCE
+10:21:46  INFO     5   ARC      +  0.444%  $     0.0875  $     0.0871  BUY_DELTA  → SELL_BINANCE
+10:22:01  INFO     -- Scan @ 10:22:01  |  Common pairs: 180  --
+10:22:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:22:01  INFO     ------------------------------------------------------------
+10:22:01  INFO     1   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:22:01  INFO     2   SKL       -0.544%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:22:01  INFO     3   STBL     +  0.458%  $     0.0253  $     0.0252  BUY_DELTA  → SELL_BINANCE
+10:22:01  INFO     4   ARIA     +  0.449%  $     0.0268  $     0.0267  BUY_DELTA  → SELL_BINANCE
+10:22:01  INFO     5   INIT      -0.398%  $     0.0535  $     0.0537  BUY_BINANCE → SELL_DELTA
+10:22:16  INFO     -- Scan @ 10:22:16  |  Common pairs: 180  --
+10:22:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:22:16  INFO     ------------------------------------------------------------
+10:22:16  INFO     1   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:22:16  INFO     2   ACT       -0.590%  $     0.0134  $     0.0135  BUY_BINANCE → SELL_DELTA
+10:22:16  INFO     3   SKL       -0.561%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:22:16  INFO     4   EDEN      -0.529%  $     0.0463  $     0.0465  BUY_BINANCE → SELL_DELTA
+10:22:16  INFO     5   RAVE      -0.450%  $     0.3971  $     0.3989  BUY_BINANCE → SELL_DELTA
+10:22:32  INFO     -- Scan @ 10:22:32  |  Common pairs: 180  --
+10:22:32  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:22:32  INFO     ------------------------------------------------------------
+10:22:32  INFO     1   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:22:32  INFO     2   SKL       -0.569%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:22:32  INFO     3   OPN       -0.446%  $     0.0629  $     0.0631  BUY_BINANCE → SELL_DELTA
+10:22:32  INFO     4   INIT      -0.422%  $     0.0535  $     0.0537  BUY_BINANCE → SELL_DELTA
+10:22:32  INFO     5   H         -0.413%  $     0.0603  $     0.0605  BUY_BINANCE → SELL_DELTA
+10:22:46  INFO     -- Scan @ 10:22:46  |  Common pairs: 180  --
+10:22:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:22:46  INFO     ------------------------------------------------------------
+10:22:46  INFO     1   RAVE      -0.985%  $     0.3923  $     0.3962  BUY_BINANCE → SELL_DELTA
+10:22:46  INFO     2   SKL       -0.557%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:22:46  INFO     3   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:22:46  INFO     4   M        +  0.421%  $     0.5933  $     0.5908  BUY_DELTA  → SELL_BINANCE
+10:22:46  INFO     5   OPN       -0.415%  $     0.0629  $     0.0631  BUY_BINANCE → SELL_DELTA
+10:23:02  INFO     -- Scan @ 10:23:02  |  Common pairs: 180  --
+10:23:02  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:23:02  INFO     ------------------------------------------------------------
+10:23:02  INFO     1   RAVE     +  0.525%  $     0.3948  $     0.3927  BUY_DELTA  → SELL_BINANCE
+10:23:02  INFO     2   SKL       -0.518%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:23:02  INFO     3   STBL     +  0.459%  $     0.0254  $     0.0252  BUY_DELTA  → SELL_BINANCE
+10:23:02  INFO     4   1000SATS  -0.419%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:23:02  INFO     5   IO        -0.380%  $     0.1701  $     0.1707  BUY_BINANCE → SELL_DELTA
+10:23:16  INFO     -- Scan @ 10:23:16  |  Common pairs: 180  --
+10:23:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:23:16  INFO     ------------------------------------------------------------
+10:23:16  INFO     1   STBL     +  0.554%  $     0.0254  $     0.0252  BUY_DELTA  → SELL_BINANCE
+10:23:16  INFO     2   SKL       -0.503%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:23:16  INFO     3   1000SATS  -0.419%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:23:16  INFO     4   S         -0.388%  $     0.0244  $     0.0245  BUY_BINANCE → SELL_DELTA
+10:23:16  INFO     5   SAHARA    -0.353%  $     0.0109  $     0.0109  BUY_BINANCE → SELL_DELTA
+10:23:31  INFO     -- Scan @ 10:23:31  |  Common pairs: 180  --
+10:23:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:23:31  INFO     ------------------------------------------------------------
+10:23:31  INFO     1   SKL       -0.584%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:23:31  INFO     2   LAB       -0.535%  $    14.7780  $    14.8575  BUY_BINANCE → SELL_DELTA
+10:23:31  INFO     3   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:23:31  INFO     4   RAVE     +  0.497%  $     0.3985  $     0.3965  BUY_DELTA  → SELL_BINANCE
+10:23:31  INFO     5   STBL     +  0.447%  $     0.0254  $     0.0253  BUY_DELTA  → SELL_BINANCE
+10:23:46  INFO     -- Scan @ 10:23:46  |  Common pairs: 180  --
+10:23:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:23:46  INFO     ------------------------------------------------------------
+10:23:46  INFO     1   SKL       -0.586%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:23:46  INFO     2   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:23:46  INFO     3   STBL     +  0.470%  $     0.0254  $     0.0253  BUY_DELTA  → SELL_BINANCE
+10:23:46  INFO     4   INIT      -0.383%  $     0.0535  $     0.0537  BUY_BINANCE → SELL_DELTA
+10:23:46  INFO     5   FRAX      -0.350%  $     0.2360  $     0.2368  BUY_BINANCE → SELL_DELTA
+10:24:01  INFO     -- Scan @ 10:24:01  |  Common pairs: 180  --
+10:24:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:24:01  INFO     ------------------------------------------------------------
+10:24:01  INFO     1   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:24:01  INFO     2   SKL       -0.569%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:24:01  INFO     3   M        +  0.475%  $     0.5937  $     0.5909  BUY_DELTA  → SELL_BINANCE
+10:24:01  INFO     4   STBL     +  0.439%  $     0.0254  $     0.0253  BUY_DELTA  → SELL_BINANCE
+10:24:01  INFO     5   OPN       -0.398%  $     0.0628  $     0.0631  BUY_BINANCE → SELL_DELTA
+10:24:16  INFO     -- Scan @ 10:24:16  |  Common pairs: 180  --
+10:24:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:24:16  INFO     ------------------------------------------------------------
+10:24:16  INFO     1   1000SATS  -0.732%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:24:16  INFO     2   SKL       -0.542%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:24:16  INFO     3   LIGHT    +  0.444%  $     0.1282  $     0.1276  BUY_DELTA  → SELL_BINANCE
+10:24:16  INFO     4   INIT      -0.390%  $     0.0535  $     0.0537  BUY_BINANCE → SELL_DELTA
+10:24:16  INFO     5   SWARMS   +  0.389%  $     0.0069  $     0.0069  BUY_DELTA  → SELL_BINANCE
+10:24:31  INFO     -- Scan @ 10:24:31  |  Common pairs: 180  --
+10:24:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:24:31  INFO     ------------------------------------------------------------
+10:24:31  INFO     1   1000SATS  -0.732%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:24:31  INFO     2   M        +  0.609%  $     0.5956  $     0.5920  BUY_DELTA  → SELL_BINANCE
+10:24:31  INFO     3   SKL       -0.521%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:24:31  INFO     4   INIT      -0.392%  $     0.0535  $     0.0537  BUY_BINANCE → SELL_DELTA
+10:24:31  INFO     5   RED       -0.351%  $     0.0917  $     0.0920  BUY_BINANCE → SELL_DELTA
+10:24:46  INFO     -- Scan @ 10:24:46  |  Common pairs: 180  --
+10:24:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:24:46  INFO     ------------------------------------------------------------
+10:24:46  INFO     1   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:24:46  INFO     2   SKL       -0.450%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:24:46  INFO     3   OPN       -0.406%  $     0.0628  $     0.0630  BUY_BINANCE → SELL_DELTA
+10:24:46  INFO     4   AIN      +  0.348%  $     0.0806  $     0.0804  BUY_DELTA  → SELL_BINANCE
+10:24:46  INFO     5   ME        -0.329%  $     0.0590  $     0.0592  BUY_BINANCE → SELL_DELTA
+10:25:01  INFO     -- Scan @ 10:25:01  |  Common pairs: 180  --
+10:25:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:25:01  INFO     ------------------------------------------------------------
+10:25:01  INFO     1   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:25:01  INFO     2   OPN       -0.413%  $     0.0627  $     0.0630  BUY_BINANCE → SELL_DELTA
+10:25:01  INFO     3   SKL       -0.405%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:25:01  INFO     4   S         -0.371%  $     0.0244  $     0.0245  BUY_BINANCE → SELL_DELTA
+10:25:01  INFO     5   AIN      +  0.346%  $     0.0807  $     0.0804  BUY_DELTA  → SELL_BINANCE
+10:25:16  INFO     -- Scan @ 10:25:16  |  Common pairs: 180  --
+10:25:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:25:16  INFO     ------------------------------------------------------------
+10:25:16  INFO     1   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:25:16  INFO     2   SKL       -0.483%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:25:16  INFO     3   AIOT     +  0.401%  $     0.0490  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:25:16  INFO     4   BERA      -0.344%  $     0.2151  $     0.2158  BUY_BINANCE → SELL_DELTA
+10:25:16  INFO     5   ACT       -0.329%  $     0.0132  $     0.0133  BUY_BINANCE → SELL_DELTA
+10:25:31  INFO     -- Scan @ 10:25:31  |  Common pairs: 180  --
+10:25:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:25:31  INFO     ------------------------------------------------------------
+10:25:31  INFO     1   RAVE      -0.757%  $     0.3994  $     0.4024  BUY_BINANCE → SELL_DELTA
+10:25:31  INFO     2   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:25:31  INFO     3   SKL       -0.498%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:25:31  INFO     4   AIOT     +  0.460%  $     0.0490  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:25:31  INFO     5   ACT       -0.393%  $     0.0132  $     0.0133  BUY_BINANCE → SELL_DELTA
+10:25:46  INFO     -- Scan @ 10:25:46  |  Common pairs: 180  --
+10:25:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:25:46  INFO     ------------------------------------------------------------
+10:25:46  INFO     1   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:25:46  INFO     2   SKL       -0.564%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:25:46  INFO     3   AIOT     +  0.542%  $     0.0491  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:25:46  INFO     4   ARIA     +  0.374%  $     0.0268  $     0.0267  BUY_DELTA  → SELL_BINANCE
+10:25:46  INFO     5   SEI       -0.355%  $     0.0503  $     0.0505  BUY_BINANCE → SELL_DELTA
+10:26:01  INFO     -- Scan @ 10:26:01  |  Common pairs: 180  --
+10:26:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:26:01  INFO     ------------------------------------------------------------
+10:26:01  INFO     1   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:26:01  INFO     2   SKL       -0.582%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:26:01  INFO     3   RAVE      -0.487%  $     0.3986  $     0.4006  BUY_BINANCE → SELL_DELTA
+10:26:01  INFO     4   ARIA     +  0.379%  $     0.0268  $     0.0267  BUY_DELTA  → SELL_BINANCE
+10:26:01  INFO     5   TNSR      -0.356%  $     0.0348  $     0.0349  BUY_BINANCE → SELL_DELTA
+10:26:16  INFO     -- Scan @ 10:26:16  |  Common pairs: 180  --
+10:26:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:26:16  INFO     ------------------------------------------------------------
+10:26:16  INFO     1   RAVE      -0.571%  $     0.3970  $     0.3993  BUY_BINANCE → SELL_DELTA
+10:26:16  INFO     2   SKL       -0.528%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:26:16  INFO     3   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:26:16  INFO     4   SAHARA    -0.445%  $     0.0109  $     0.0109  BUY_BINANCE → SELL_DELTA
+10:26:16  INFO     5   AIOT     +  0.425%  $     0.0490  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:26:31  INFO     -- Scan @ 10:26:31  |  Common pairs: 180  --
+10:26:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:26:31  INFO     ------------------------------------------------------------
+10:26:31  INFO     1   AIN      +  0.671%  $     0.0806  $     0.0800  BUY_DELTA  → SELL_BINANCE
+10:26:31  INFO     2   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:26:31  INFO     3   SKL       -0.515%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:26:31  INFO     4   ARIA     +  0.472%  $     0.0268  $     0.0267  BUY_DELTA  → SELL_BINANCE
+10:26:31  INFO     5   RAVE      -0.470%  $     0.3964  $     0.3983  BUY_BINANCE → SELL_DELTA
+10:26:46  INFO     -- Scan @ 10:26:46  |  Common pairs: 180  --
+10:26:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:26:46  INFO     ------------------------------------------------------------
+10:26:46  INFO     1   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:26:46  INFO     2   SKL       -0.520%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:26:46  INFO     3   AIN      +  0.501%  $     0.0805  $     0.0801  BUY_DELTA  → SELL_BINANCE
+10:26:46  INFO     4   ARIA     +  0.417%  $     0.0268  $     0.0267  BUY_DELTA  → SELL_BINANCE
+10:26:46  INFO     5   STBL     +  0.370%  $     0.0255  $     0.0254  BUY_DELTA  → SELL_BINANCE
+10:27:01  INFO     -- Scan @ 10:27:01  |  Common pairs: 180  --
+10:27:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:27:01  INFO     ------------------------------------------------------------
+10:27:01  INFO     1   ARIA     +  0.645%  $     0.0268  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:27:01  INFO     2   SKL       -0.458%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:27:01  INFO     3   1000SATS  -0.419%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:27:01  INFO     4   OPN       -0.367%  $     0.0627  $     0.0630  BUY_BINANCE → SELL_DELTA
+10:27:01  INFO     5   IO        -0.317%  $     0.1701  $     0.1706  BUY_BINANCE → SELL_DELTA
+10:27:16  INFO     -- Scan @ 10:27:16  |  Common pairs: 180  --
+10:27:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:27:16  INFO     ------------------------------------------------------------
+10:27:16  INFO     1   RAVE      -0.718%  $     0.3941  $     0.3970  BUY_BINANCE → SELL_DELTA
+10:27:16  INFO     2   ARIA     +  0.631%  $     0.0268  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:27:16  INFO     3   1000SATS  -0.628%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:27:16  INFO     4   GOAT     +  0.558%  $     0.0132  $     0.0131  BUY_DELTA  → SELL_BINANCE
+10:27:16  INFO     5   SKL       -0.499%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:27:31  INFO     -- Scan @ 10:27:31  |  Common pairs: 180  --
+10:27:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:27:31  INFO     ------------------------------------------------------------
+10:27:31  INFO     1   1000SATS  -0.524%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:27:31  INFO     2   SKL       -0.513%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:27:31  INFO     3   SWARMS   +  0.497%  $     0.0069  $     0.0068  BUY_DELTA  → SELL_BINANCE
+10:27:31  INFO     4   ARIA     +  0.486%  $     0.0268  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:27:31  INFO     5   GOAT     +  0.409%  $     0.0132  $     0.0131  BUY_DELTA  → SELL_BINANCE
+10:27:46  INFO     -- Scan @ 10:27:46  |  Common pairs: 180  --
+10:27:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:27:46  INFO     ------------------------------------------------------------
+10:27:46  INFO     1   SKL       -0.533%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:27:46  INFO     2   SWARMS   +  0.405%  $     0.0069  $     0.0068  BUY_DELTA  → SELL_BINANCE
+10:27:46  INFO     3   RED       -0.382%  $     0.0919  $     0.0923  BUY_BINANCE → SELL_DELTA
+10:27:46  INFO     4   AIOT     +  0.354%  $     0.0490  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:27:46  INFO     5   ME        -0.320%  $     0.0590  $     0.0592  BUY_BINANCE → SELL_DELTA
+10:28:01  INFO     -- Scan @ 10:28:01  |  Common pairs: 180  --
+10:28:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:28:01  INFO     ------------------------------------------------------------
+10:28:01  INFO     1   RAVE     +  1.478%  $     0.4007  $     0.3949  BUY_DELTA  → SELL_BINANCE
+10:28:01  INFO     2   SWARMS   +  0.626%  $     0.0069  $     0.0068  BUY_DELTA  → SELL_BINANCE
+10:28:01  INFO     3   SKL       -0.565%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:28:01  INFO     4   M        +  0.398%  $     0.5973  $     0.5949  BUY_DELTA  → SELL_BINANCE
+10:28:01  INFO     5   RED       -0.362%  $     0.0919  $     0.0922  BUY_BINANCE → SELL_DELTA
+10:28:16  INFO     -- Scan @ 10:28:16  |  Common pairs: 180  --
+10:28:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:28:16  INFO     ------------------------------------------------------------
+10:28:16  INFO     1   SKL       -0.585%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:28:16  INFO     2   AIOT     +  0.401%  $     0.0490  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:28:16  INFO     3   IO        -0.374%  $     0.1700  $     0.1706  BUY_BINANCE → SELL_DELTA
+10:28:16  INFO     4   MON       -0.346%  $     0.0189  $     0.0190  BUY_BINANCE → SELL_DELTA
+10:28:16  INFO     5   RED       -0.332%  $     0.0919  $     0.0922  BUY_BINANCE → SELL_DELTA
+10:28:31  INFO     -- Scan @ 10:28:31  |  Common pairs: 180  --
+10:28:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:28:31  INFO     ------------------------------------------------------------
+10:28:31  INFO     1   RAVE     +  0.857%  $     0.4037  $     0.4003  BUY_DELTA  → SELL_BINANCE
+10:28:31  INFO     2   SKL       -0.603%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:28:31  INFO     3   STBL     +  0.413%  $     0.0254  $     0.0253  BUY_DELTA  → SELL_BINANCE
+10:28:31  INFO     4   AIOT     +  0.373%  $     0.0490  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:28:31  INFO     5   SEI       -0.371%  $     0.0505  $     0.0507  BUY_BINANCE → SELL_DELTA
+10:28:46  INFO     -- Scan @ 10:28:46  |  Common pairs: 180  --
+10:28:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:28:46  INFO     ------------------------------------------------------------
+10:28:46  INFO     1   SKL       -0.598%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:28:46  INFO     2   STBL     +  0.469%  $     0.0254  $     0.0253  BUY_DELTA  → SELL_BINANCE
+10:28:46  INFO     3   M        +  0.430%  $     0.6011  $     0.5985  BUY_DELTA  → SELL_BINANCE
+10:28:46  INFO     4   AIO      +  0.430%  $     0.0937  $     0.0933  BUY_DELTA  → SELL_BINANCE
+10:28:46  INFO     5   MANA      -0.309%  $     0.0639  $     0.0641  BUY_BINANCE → SELL_DELTA
+10:29:01  INFO     -- Scan @ 10:29:01  |  Common pairs: 180  --
+10:29:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:29:01  INFO     ------------------------------------------------------------
+10:29:01  INFO     1   SKL       -0.599%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:29:01  INFO     2   STBL     +  0.456%  $     0.0254  $     0.0253  BUY_DELTA  → SELL_BINANCE
+10:29:01  INFO     3   COOKIE    -0.350%  $     0.0088  $     0.0088  BUY_BINANCE → SELL_DELTA
+10:29:01  INFO     4   AIN      +  0.335%  $     0.0801  $     0.0798  BUY_DELTA  → SELL_BINANCE
+10:29:01  INFO     5   MANA      -0.335%  $     0.0639  $     0.0641  BUY_BINANCE → SELL_DELTA
+10:29:16  INFO     -- Scan @ 10:29:16  |  Common pairs: 180  --
+10:29:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:29:16  INFO     ------------------------------------------------------------
+10:29:16  INFO     1   SKL       -0.556%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:29:16  INFO     2   DUSK      -0.533%  $     0.0789  $     0.0793  BUY_BINANCE → SELL_DELTA
+10:29:16  INFO     3   AIN      +  0.418%  $     0.0801  $     0.0798  BUY_DELTA  → SELL_BINANCE
+10:29:16  INFO     4   MANA      -0.368%  $     0.0639  $     0.0641  BUY_BINANCE → SELL_DELTA
+10:29:16  INFO     5   1000SATS  -0.315%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:29:31  INFO     -- Scan @ 10:29:31  |  Common pairs: 180  --
+10:29:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:29:31  INFO     ------------------------------------------------------------
+10:29:31  INFO     1   SKL       -0.491%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:29:31  INFO     2   DUSK      -0.484%  $     0.0789  $     0.0793  BUY_BINANCE → SELL_DELTA
+10:29:31  INFO     3   AAVE      -0.392%  $    92.0700  $    92.4325  BUY_BINANCE → SELL_DELTA
+10:29:31  INFO     4   MANA      -0.380%  $     0.0639  $     0.0641  BUY_BINANCE → SELL_DELTA
+10:29:31  INFO     5   STBL     +  0.352%  $     0.0254  $     0.0254  BUY_DELTA  → SELL_BINANCE
+10:29:46  INFO     -- Scan @ 10:29:46  |  Common pairs: 180  --
+10:29:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:29:46  INFO     ------------------------------------------------------------
+10:29:46  INFO     1   1000SATS  -0.420%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:29:46  INFO     2   MANA      -0.391%  $     0.0639  $     0.0642  BUY_BINANCE → SELL_DELTA
+10:29:46  INFO     3   SKL       -0.388%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:29:46  INFO     4   DUSK      -0.356%  $     0.0789  $     0.0792  BUY_BINANCE → SELL_DELTA
+10:29:46  INFO     5   AIOT     +  0.351%  $     0.0489  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:30:01  INFO     -- Scan @ 10:30:01  |  Common pairs: 180  --
+10:30:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:30:01  INFO     ------------------------------------------------------------
+10:30:01  INFO     1   RAVE      -0.498%  $     0.3955  $     0.3975  BUY_BINANCE → SELL_DELTA
+10:30:01  INFO     2   1000SATS  -0.420%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:30:01  INFO     3   MOODENG   -0.401%  $     0.0408  $     0.0409  BUY_BINANCE → SELL_DELTA
+10:30:01  INFO     4   MANA      -0.391%  $     0.0639  $     0.0642  BUY_BINANCE → SELL_DELTA
+10:30:01  INFO     5   AIN      +  0.351%  $     0.0799  $     0.0796  BUY_DELTA  → SELL_BINANCE
+10:30:16  INFO     -- Scan @ 10:30:16  |  Common pairs: 180  --
+10:30:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:30:16  INFO     ------------------------------------------------------------
+10:30:16  INFO     1   BB        -0.477%  $     0.0194  $     0.0195  BUY_BINANCE → SELL_DELTA
+10:30:16  INFO     2   MANA      -0.420%  $     0.0638  $     0.0641  BUY_BINANCE → SELL_DELTA
+10:30:16  INFO     3   SOLV      -0.358%  $     0.0029  $     0.0029  BUY_BINANCE → SELL_DELTA
+10:30:16  INFO     4   ENJ       -0.321%  $     0.0288  $     0.0289  BUY_BINANCE → SELL_DELTA
+10:30:16  INFO     5   BLESS     -0.305%  $     0.0081  $     0.0081  BUY_BINANCE → SELL_DELTA
+10:30:31  INFO     -- Scan @ 10:30:31  |  Common pairs: 180  --
+10:30:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:30:31  INFO     ------------------------------------------------------------
+10:30:31  INFO     1   BB        -0.496%  $     0.0193  $     0.0194  BUY_BINANCE → SELL_DELTA
+10:30:31  INFO     2   STBL     +  0.421%  $     0.0255  $     0.0254  BUY_DELTA  → SELL_BINANCE
+10:30:31  INFO     3   SIREN     -0.398%  $     0.0365  $     0.0366  BUY_BINANCE → SELL_DELTA
+10:30:31  INFO     4   MANA      -0.393%  $     0.0638  $     0.0641  BUY_BINANCE → SELL_DELTA
+10:30:31  INFO     5   SOLV      -0.378%  $     0.0029  $     0.0029  BUY_BINANCE → SELL_DELTA
+10:30:46  INFO     -- Scan @ 10:30:46  |  Common pairs: 180  --
+10:30:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:30:46  INFO     ------------------------------------------------------------
+10:30:46  INFO     1   SOLV      -0.501%  $     0.0029  $     0.0029  BUY_BINANCE → SELL_DELTA
+10:30:46  INFO     2   SKL       -0.469%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:30:46  INFO     3   RED       -0.455%  $     0.0916  $     0.0920  BUY_BINANCE → SELL_DELTA
+10:30:46  INFO     4   BB        -0.445%  $     0.0193  $     0.0194  BUY_BINANCE → SELL_DELTA
+10:30:46  INFO     5   OPN       -0.428%  $     0.0626  $     0.0628  BUY_BINANCE → SELL_DELTA
+10:30:47  INFO     ============================================================
+10:30:47  INFO       Binance <-> Delta Exchange India  |  Perp Spread Scanner
+10:30:47  INFO       Threshold: 0.0%  |  Interval: 15s
+10:30:47  INFO     ============================================================
+10:30:48  INFO     -- Scan @ 10:30:48  |  Common pairs: 180  --
+10:30:48  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:30:48  INFO     ------------------------------------------------------------
+10:30:48  INFO     1   SKL       -0.500%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:30:48  INFO     2   SOLV      -0.449%  $     0.0029  $     0.0029  BUY_BINANCE → SELL_DELTA
+10:30:48  INFO     3   SEI       -0.385%  $     0.0502  $     0.0504  BUY_BINANCE → SELL_DELTA
+10:30:48  INFO     4   ARIA     +  0.334%  $     0.0266  $     0.0265  BUY_DELTA  → SELL_BINANCE
+10:30:48  INFO     5   BB        -0.329%  $     0.0193  $     0.0194  BUY_BINANCE → SELL_DELTA
+10:30:49  INFO     [ALERT] Telegram sent (180 pairs above 0.0%)
+10:31:02  INFO     -- Scan @ 10:31:02  |  Common pairs: 180  --
+10:31:02  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:31:02  INFO     ------------------------------------------------------------
+10:31:02  INFO     1   ARIA     +  0.497%  $     0.0267  $     0.0265  BUY_DELTA  → SELL_BINANCE
+10:31:02  INFO     2   RAVE      -0.495%  $     0.3996  $     0.4016  BUY_BINANCE → SELL_DELTA
+10:31:02  INFO     3   AIN      +  0.475%  $     0.0794  $     0.0790  BUY_DELTA  → SELL_BINANCE
+10:31:02  INFO     4   SKL       -0.470%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:31:02  INFO     5   S         -0.393%  $     0.0244  $     0.0245  BUY_BINANCE → SELL_DELTA
+10:31:03  INFO     [ALERT] Telegram sent (180 pairs above 0.0%)
+10:31:17  INFO     -- Scan @ 10:31:17  |  Common pairs: 180  --
+10:31:17  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:31:17  INFO     ------------------------------------------------------------
+10:31:17  INFO     1   ARIA     +  0.463%  $     0.0267  $     0.0265  BUY_DELTA  → SELL_BINANCE
+10:31:17  INFO     2   AIN      +  0.444%  $     0.0794  $     0.0790  BUY_DELTA  → SELL_BINANCE
+10:31:18  INFO     3   AIOT     +  0.429%  $     0.0490  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:31:18  INFO     4   SKL       -0.419%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:31:18  INFO     5   H         -0.403%  $     0.0606  $     0.0608  BUY_BINANCE → SELL_DELTA
+10:31:18  INFO     [ALERT] Telegram sent (180 pairs above 0.0%)
+10:31:33  INFO     -- Scan @ 10:31:33  |  Common pairs: 180  --
+10:31:33  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:31:33  INFO     ------------------------------------------------------------
+10:31:33  INFO     1   AIOT     +  0.463%  $     0.0491  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:31:33  INFO     2   STBL     +  0.429%  $     0.0255  $     0.0254  BUY_DELTA  → SELL_BINANCE
+10:31:33  INFO     3   AIN      +  0.379%  $     0.0794  $     0.0791  BUY_DELTA  → SELL_BINANCE
+10:31:33  INFO     4   SKL       -0.367%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:31:33  INFO     5   ARIA     +  0.347%  $     0.0267  $     0.0266  BUY_DELTA  → SELL_BINANCE
+10:31:33  INFO     [ALERT] Telegram sent (180 pairs above 0.0%)
+10:31:45  INFO     ============================================================
+10:31:45  INFO       Binance <-> Delta Exchange India  |  Perp Spread Scanner
+10:31:45  INFO       Threshold: 5.0%  |  Interval: 15s
+10:31:45  INFO     ============================================================
+10:31:46  INFO     -- Scan @ 10:31:46  |  Common pairs: 180  --
+10:31:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:31:46  INFO     ------------------------------------------------------------
+10:31:46  INFO     1   BERA      -0.512%  $     0.2134  $     0.2145  BUY_BINANCE → SELL_DELTA
+10:31:46  INFO     2   AIOT     +  0.444%  $     0.0491  $     0.0489  BUY_DELTA  → SELL_BINANCE
+10:31:46  INFO     3   IO        -0.422%  $     0.1699  $     0.1706  BUY_BINANCE → SELL_DELTA
+10:32:01  INFO     -- Scan @ 10:32:01  |  Common pairs: 180  --
+10:32:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:32:01  INFO     ------------------------------------------------------------
+10:32:01  INFO     1   AIOT     +  0.508%  $     0.0491  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:32:01  INFO     2   MANA      -0.467%  $     0.0638  $     0.0641  BUY_BINANCE → SELL_DELTA
+10:32:01  INFO     3   IO        -0.382%  $     0.1699  $     0.1706  BUY_BINANCE → SELL_DELTA
+10:32:16  INFO     -- Scan @ 10:32:16  |  Common pairs: 180  --
+10:32:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:32:16  INFO     ------------------------------------------------------------
+10:32:16  INFO     1   MANA      -0.461%  $     0.0638  $     0.0641  BUY_BINANCE → SELL_DELTA
+10:32:16  INFO     2   AIOT     +  0.434%  $     0.0491  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:32:16  INFO     3   M        +  0.419%  $     0.5926  $     0.5901  BUY_DELTA  → SELL_BINANCE
+10:32:31  INFO     -- Scan @ 10:32:31  |  Common pairs: 180  --
+10:32:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:32:31  INFO     ------------------------------------------------------------
+10:32:31  INFO     1   AIN      +  0.528%  $     0.0798  $     0.0794  BUY_DELTA  → SELL_BINANCE
+10:32:31  INFO     2   MANA      -0.443%  $     0.0638  $     0.0641  BUY_BINANCE → SELL_DELTA
+10:32:31  INFO     3   ARIA     +  0.427%  $     0.0267  $     0.0265  BUY_DELTA  → SELL_BINANCE
+10:32:46  INFO     -- Scan @ 10:32:46  |  Common pairs: 180  --
+10:32:46  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:32:46  INFO     ------------------------------------------------------------
+10:32:46  INFO     1   STBL     +  0.404%  $     0.0255  $     0.0253  BUY_DELTA  → SELL_BINANCE
+10:32:46  INFO     2   LIGHT    +  0.392%  $     0.1276  $     0.1271  BUY_DELTA  → SELL_BINANCE
+10:32:46  INFO     3   SKL       -0.349%  $     0.0036  $     0.0036  BUY_BINANCE → SELL_DELTA
+10:33:01  INFO     -- Scan @ 10:33:01  |  Common pairs: 180  --
+10:33:01  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:33:01  INFO     ------------------------------------------------------------
+10:33:01  INFO     1   LIGHT    +  0.519%  $     0.1279  $     0.1272  BUY_DELTA  → SELL_BINANCE
+10:33:01  INFO     2   STBL     +  0.426%  $     0.0255  $     0.0254  BUY_DELTA  → SELL_BINANCE
+10:33:01  INFO     3   1000SATS  -0.421%  $     0.0000  $     0.0000  BUY_BINANCE → SELL_DELTA
+10:33:16  INFO     -- Scan @ 10:33:16  |  Common pairs: 180  --
+10:33:16  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:33:16  INFO     ------------------------------------------------------------
+10:33:16  INFO     1   AIOT     +  0.381%  $     0.0490  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:33:16  INFO     2   POPCAT    -0.376%  $     0.0452  $     0.0454  BUY_BINANCE → SELL_DELTA
+10:33:16  INFO     3   DUSK      -0.350%  $     0.0787  $     0.0790  BUY_BINANCE → SELL_DELTA
+10:33:31  INFO     -- Scan @ 10:33:31  |  Common pairs: 180  --
+10:33:31  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:33:31  INFO     ------------------------------------------------------------
+10:33:31  INFO     1   AIN      +  0.572%  $     0.0800  $     0.0795  BUY_DELTA  → SELL_BINANCE
+10:33:31  INFO     2   AIOT     +  0.450%  $     0.0490  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:33:31  INFO     3   ARIA     +  0.419%  $     0.0267  $     0.0265  BUY_DELTA  → SELL_BINANCE
+10:33:47  INFO     -- Scan @ 10:33:47  |  Common pairs: 180  --
+10:33:47  INFO     #   Symbol    Spread%       Binance         Delta  Direction
+10:33:47  INFO     ------------------------------------------------------------
+10:33:47  INFO     1   ARIA     +  0.526%  $     0.0267  $     0.0265  BUY_DELTA  → SELL_BINANCE
+10:33:47  INFO     2   AIOT     +  0.458%  $     0.0490  $     0.0488  BUY_DELTA  → SELL_BINANCE
+10:33:47  INFO     3   STBL     +  0.378%  $     0.0254  $     0.0253  BUY_DELTA  → SELL_BINANCE
