@@ -133,7 +133,8 @@ const std::string SYMBOL_2 = "XAUTUSD";
 // STRATEGY
 // ============================================================
 
-const double ENTRY_SPREAD = 7.0;
+const double ENTRY_SPREAD = 5.0;
+const double EXIT_SPREAD  = 1.80;   // close position once |spread| reverts to/below this
 const double STOP_SPREAD  = 100.0;
 
 // ============================================================
@@ -142,8 +143,7 @@ const double STOP_SPREAD  = 100.0;
 
 const int    LEVERAGE              = 100;
 const double CAPITAL_PERCENT       = 0.50;
-const int    MAX_POSITION_HOLD_SEC = 3600000;
-const int    COOLDOWN_AFTER_EXIT   = 0;
+const int    COOLDOWN_AFTER_EXIT   = 30;
 
 // ============================================================
 // FILTERS
@@ -159,16 +159,17 @@ const double MIN_ORDERBOOK_USD = 5000.0;
 // use the in-memory positions_open_ flag which is updated
 // immediately after every open/close order.
 // ============================================================
-const int POSITION_REFRESH_SEC  = 2;   // REST sync interval
-const int BALANCE_REFRESH_SEC   = 2;   // balance cache TTL
-const int DASHBOARD_REFRESH_MS  = 50;  // max dashboard FPS (2/sec)
+const int POSITION_REFRESH_SEC    = 30;   // REST sync interval
+const int BALANCE_REFRESH_SEC     = 10;   // balance cache TTL
+const int DASHBOARD_REFRESH_MS    = 50;   // max dashboard FPS (20/sec)
+const int PNL_UPDATE_INTERVAL_SEC = 10 * 60; // live PnL Telegram update cadence
 
 // ============================================================
 // WEBSOCKET
 // ============================================================
 const int WS_CONNECT_TIMEOUT_SEC = 10;
 const int WS_RECONNECT_BASE_SEC  = 1;
-const int WS_RECONNECT_MAX_SEC   = 60;
+const int WS_RECONNECT_MAX_SEC   = 10;
 
 // ============================================================
 // USER-AGENT
@@ -565,6 +566,11 @@ public:
         , entry_time_(0)
         , entry_spread_(std::nullopt)
         , entry_direction_("")
+        , entry_price_1_(0.0)
+        , entry_price_2_(0.0)
+        , entry_size_1_(0)
+        , entry_size_2_(0)
+        , last_pnl_update_(0)
         , last_exit_time_(0)
         , last_position_refresh_(0)
         , cached_balance_(0.0)
@@ -615,6 +621,14 @@ private:
     long long             entry_time_;
     std::optional<double> entry_spread_;
     std::string           entry_direction_;
+
+    // Recorded at entry — used to compute live unrealized PnL
+    double                entry_price_1_;
+    double                entry_price_2_;
+    int                   entry_size_1_;
+    int                   entry_size_2_;
+    long long             last_pnl_update_;   // last time a live PnL Telegram update was sent
+
     long long             last_exit_time_;
     long long             last_position_refresh_;
 
@@ -674,20 +688,27 @@ private:
 
     // --------------------------------------------------------
     // fetch_open_positions
+    // Returns:
+    //   - std::nullopt  -> the REST call failed or the response was
+    //                      ambiguous. Callers must NOT treat this as
+    //                      "no positions" — the real exchange state
+    //                      is unknown, so any cached position flag
+    //                      must be left untouched.
+    //   - vector (maybe empty) -> confirmed position state from the API.
     // --------------------------------------------------------
-    std::vector<json> fetch_open_positions()
+    std::optional<std::vector<json>> fetch_open_positions()
     {
         auto data = client_.get_positions();
-        if (!data) { log_error("fetch_open_positions: no response"); return {}; }
+        if (!data) { log_error("fetch_open_positions: no response"); return std::nullopt; }
         if (!data->value("success", false))
         {
             std::string code = "unknown";
             if (data->contains("error") && (*data)["error"].contains("code"))
                 code = json_to_string((*data)["error"]["code"]);
             log_error("fetch_open_positions: API error — " + code);
-            return {};
+            return std::nullopt;
         }
-        if (!data->contains("result")) { log_error("fetch_open_positions: no result"); return {}; }
+        if (!data->contains("result")) { log_error("fetch_open_positions: no result"); return std::nullopt; }
 
         const json& result = (*data)["result"];
         const json* arr_ptr = nullptr;
@@ -700,7 +721,7 @@ private:
                 arr_ptr = &result["open_positions"];
             else { fallback_arr = json::array({ result }); arr_ptr = &fallback_arr; }
         }
-        else { log_error("fetch_open_positions: unexpected result type"); return {}; }
+        else { log_error("fetch_open_positions: unexpected result type"); return std::nullopt; }
 
         std::vector<json> open;
         for (const auto& p : *arr_ptr)
@@ -716,13 +737,44 @@ private:
     }
 
     // --------------------------------------------------------
+    // Counts only positions belonging to SYMBOL_1/SYMBOL_2 (our hedge legs),
+    // ignoring any unrelated positions that might exist on the account.
+    // --------------------------------------------------------
+    int count_our_positions(const std::vector<json>& positions) const
+    {
+        int pid1 = products_.at(SYMBOL_1)["id"].get<int>();
+        int pid2 = products_.at(SYMBOL_2)["id"].get<int>();
+
+        int count = 0;
+        for (const auto& p : positions)
+        {
+            if (!p.contains("product_id") || p["product_id"].is_null()) continue;
+            int pid = p["product_id"].get<int>();
+            if (pid == pid1 || pid == pid2) ++count;
+        }
+        return count;
+    }
+
+    // --------------------------------------------------------
     // Recover Positions on Startup
     // --------------------------------------------------------
     void recover_positions_on_startup()
     {
         log_info("Checking existing positions...");
-        auto positions = fetch_open_positions();
+        auto positions_opt = fetch_open_positions();
 
+        if (!positions_opt)
+        {
+            // We cannot verify the real exchange state at startup — do not
+            // assume flat. Fail loudly rather than risk opening a duplicate
+            // hedge on top of a position we simply failed to detect.
+            throw std::runtime_error(
+                "recover_positions_on_startup: could not verify position state "
+                "from the exchange (API call failed). Refusing to start blind — "
+                "check connectivity/credentials and restart.");
+        }
+
+        auto positions = *positions_opt;
         if (positions.empty()) { log_info("No open positions found."); return; }
 
         std::vector<std::string> found_symbols;
@@ -760,9 +812,7 @@ private:
                 }
             }
 
-            // Recover entry spread from the average entry price fields if available,
-            // otherwise leave as nullopt and it will be populated on the next tick.
-            // Two-pass: collect both entry prices then compute spread
+            // Recover entry spread + per-leg entry price/size for live PnL calc.
             double entry_price_1 = 0.0;
             double entry_price_2 = 0.0;
 
@@ -770,12 +820,23 @@ private:
             {
                 if (!p.contains("entry_price") || p["entry_price"].is_null()) continue;
                 int pid = p["product_id"].get<int>();
+                int sz  = 0;
+                if (p.contains("size") && !p["size"].is_null())
+                    sz = p["size"].get<int>();
 
                 if (products_[SYMBOL_1]["id"].get<int>() == pid)
-                    entry_price_1 = json_to_double(p["entry_price"]);
+                {
+                    entry_price_1  = json_to_double(p["entry_price"]);
+                    entry_price_1_ = entry_price_1;
+                    entry_size_1_  = std::abs(sz);
+                }
 
                 if (products_[SYMBOL_2]["id"].get<int>() == pid)
-                    entry_price_2 = json_to_double(p["entry_price"]);
+                {
+                    entry_price_2  = json_to_double(p["entry_price"]);
+                    entry_price_2_ = entry_price_2;
+                    entry_size_2_  = std::abs(sz);
+                }
             }
 
             if (entry_price_1 > 0.0 && entry_price_2 > 0.0)
@@ -786,6 +847,8 @@ private:
             if (!entry_spread_)
                 log_warn("recover_positions_on_startup: entry_price not available, "
                          "entry_spread will show None until next tick.");
+
+            last_pnl_update_ = now_sec();
 
             log_warn("Recovered Existing Hedge — direction: " + entry_direction_);
             send_telegram("Recovered Existing Hedge\nDirection: " + entry_direction_);
@@ -882,6 +945,36 @@ private:
     }
 
     // --------------------------------------------------------
+    // Compute live unrealized PnL (USD) — pure math, no I/O.
+    // Uses entry_price_1_/2_ and entry_size_1_/2_ recorded at entry.
+    // --------------------------------------------------------
+    double compute_unrealized_pnl(double current_p1, double current_p2) const
+    {
+        if (entry_price_1_ <= 0.0 || entry_price_2_ <= 0.0) return 0.0;
+
+        double cv1 = json_to_double(products_.at(SYMBOL_1)["contract_value"]);
+        double cv2 = json_to_double(products_.at(SYMBOL_2)["contract_value"]);
+
+        double leg1_pnl = 0.0; // PAXG leg
+        double leg2_pnl = 0.0; // XAUT leg
+
+        if (entry_direction_ == "SHORT_PAXG")
+        {
+            // Short PAXG / Long XAUT
+            leg1_pnl = (entry_price_1_ - current_p1) * entry_size_1_ * cv1;
+            leg2_pnl = (current_p2 - entry_price_2_) * entry_size_2_ * cv2;
+        }
+        else if (entry_direction_ == "LONG_PAXG")
+        {
+            // Long PAXG / Short XAUT
+            leg1_pnl = (current_p1 - entry_price_1_) * entry_size_1_ * cv1;
+            leg2_pnl = (entry_price_2_ - current_p2) * entry_size_2_ * cv2;
+        }
+
+        return leg1_pnl + leg2_pnl;
+    }
+
+    // --------------------------------------------------------
     // Open Trade — runs on rest_queue_ worker thread
     // --------------------------------------------------------
     void open_trade_async(const std::string& direction, double p1, double p2,
@@ -948,11 +1041,21 @@ private:
         entry_time_      = now_sec();
         entry_spread_    = current_spread;
         entry_direction_ = direction;
+        entry_price_1_   = p1;
+        entry_price_2_   = p2;
+        entry_size_1_    = size1;
+        entry_size_2_    = size2;
+        last_pnl_update_ = now_sec();
 
         log_info(signal);
         std::ostringstream msg;
-        msg << "ENTRY\n" << signal << "\nSpread: "
-            << std::fixed << std::setprecision(2) << current_spread;
+        msg << "ENTRY\n"
+            << signal << "\n"
+            << "PAXG Entry Price : " << std::fixed << std::setprecision(2) << p1 << "\n"
+            << "XAUT Entry Price : " << p2 << "\n"
+            << "Entry Spread     : " << current_spread << "\n"
+            << "PAXG Size        : " << size1 << "\n"
+            << "XAUT Size        : " << size2;
         send_telegram(msg.str());
 
         trade_in_flight_.store(false);
@@ -965,18 +1068,34 @@ private:
     // close_all — synchronous wrapper used at startup before
     // the WebSocket and rest_queue_ are running.
     // --------------------------------------------------------
-    void close_all(const std::string& reason)
+    void close_all(const std::string& reason, std::optional<double> final_pnl = std::nullopt)
     {
-        close_all_async(reason);
+        close_all_async(reason, final_pnl);
     }
 
     // --------------------------------------------------------
     // Close All — runs on rest_queue_ worker thread
     // --------------------------------------------------------
-    void close_all_async(const std::string& reason)
+    void close_all_async(const std::string& reason, std::optional<double> final_pnl = std::nullopt)
     {
-        auto positions = fetch_open_positions();
+        auto positions_opt = fetch_open_positions();
 
+        if (!positions_opt)
+        {
+            // Could not verify current positions — do NOT assume flat and
+            // silently reset state, or a genuinely open hedge would be
+            // abandoned with no exit orders sent. Retry will happen on the
+            // next evaluate() cycle since trade_in_flight_ is cleared but
+            // positions_open_ is left as-is.
+            log_error("close_all_async: could not verify positions before closing — "
+                      "aborting this close attempt, will retry.");
+            send_telegram("CLOSE ATTEMPT FAILED\nReason: " + reason +
+                          "\nCould not verify positions from exchange — will retry.");
+            trade_in_flight_.store(false);
+            return;
+        }
+
+        auto positions = *positions_opt;
         if (positions.empty()) { reset_state(); trade_in_flight_.store(false); return; }
 
         bool all_ok = true;
@@ -1015,7 +1134,20 @@ private:
 
         reset_state();
         refresh_balance_cache();
-        send_telegram("CLOSED\nReason: " + reason);
+
+        std::ostringstream msg;
+        msg << "EXIT / CLOSED\nReason: " << reason;
+        if (final_pnl)
+        {
+            msg << "\nFinal PnL: " << std::fixed << std::setprecision(2)
+                << *final_pnl << " USD";
+        }
+        else
+        {
+            msg << "\nFinal PnL: N/A";
+        }
+        send_telegram(msg.str());
+
         trade_in_flight_.store(false);
     }
 
@@ -1025,6 +1157,11 @@ private:
         entry_time_      = 0;
         entry_spread_    = std::nullopt;
         entry_direction_ = "";
+        entry_price_1_   = 0.0;
+        entry_price_2_   = 0.0;
+        entry_size_1_    = 0;
+        entry_size_2_    = 0;
+        last_pnl_update_ = 0;
         last_exit_time_  = now_sec();
     }
 
@@ -1050,6 +1187,7 @@ private:
         std::cout << "Spread        : " << spread           << "\n";
         std::cout << "Abs Spread    : " << std::abs(spread) << "\n";
         std::cout << "Entry Trigger : >= " << ENTRY_SPREAD  << " (both directions)\n";
+        std::cout << "Exit Trigger  : <= " << EXIT_SPREAD   << "\n";
         std::cout << "Stop Spread   : "   << STOP_SPREAD    << "\n\n";
         std::cout << "Entry Direction : " << entry_direction_ << "\n";
         if (entry_spread_)
@@ -1058,6 +1196,12 @@ private:
             std::cout << "Entry Spread    : Recovering (waiting for next tick)...\n";
         else
             std::cout << "Entry Spread    : None\n";
+
+        if (positions_open_ && prices_[SYMBOL_1] && prices_[SYMBOL_2])
+        {
+            double live_pnl = compute_unrealized_pnl(*prices_[SYMBOL_1], *prices_[SYMBOL_2]);
+            std::cout << "Unrealized PnL  : $" << live_pnl << "\n";
+        }
 
         if (m1)
         {
@@ -1114,8 +1258,28 @@ private:
             rest_queue_.post([this]
             {
                 auto real_positions = fetch_open_positions();
-                int  cnt            = static_cast<int>(real_positions.size());
-                positions_open_     = (cnt > 0);
+                if (!real_positions)
+                {
+                    // Could not verify — leave positions_open_ exactly as it
+                    // was. This is the fix for the duplicate-entry bug: a
+                    // transient API failure must never be interpreted as
+                    // "flat", or the strategy will re-enter on top of a
+                    // hedge that is still genuinely open.
+                    log_warn("Position sync: could not verify state this cycle — "
+                             "keeping positions_open_ unchanged.");
+                    return;
+                }
+
+                int cnt         = count_our_positions(*real_positions);
+                bool now_open   = (cnt > 0);
+
+                if (positions_open_ && !now_open)
+                    log_warn("Position sync: exchange confirms flat — clearing positions_open_.");
+                else if (!positions_open_ && now_open)
+                    log_warn("Position sync: exchange shows an open hedge we didn't know about — "
+                             "setting positions_open_.");
+
+                positions_open_ = now_open;
             });
         }
 
@@ -1126,7 +1290,25 @@ private:
             rest_queue_.post([this] { refresh_balance_cache(); });
         }
 
-        // --- 5. Strategy logic (all in-memory, fast) ---
+        // --- 5. Periodic live PnL Telegram update while a position is open ---
+        if (positions_open_ && (now - last_pnl_update_ >= PNL_UPDATE_INTERVAL_SEC))
+        {
+            last_pnl_update_ = now; // set eagerly to avoid duplicate sends
+            double live_pnl      = compute_unrealized_pnl(*p1, *p2);
+            long long hold_secs  = (entry_time_ > 0) ? (now - entry_time_) : 0;
+
+            std::ostringstream msg;
+            msg << "LIVE PnL UPDATE\n"
+                << "Direction   : " << entry_direction_ << "\n"
+                << "PAXG        : " << std::fixed << std::setprecision(2) << *p1 << "\n"
+                << "XAUT        : " << *p2 << "\n"
+                << "Spread      : " << spread << " (exit at <= " << EXIT_SPREAD << ")\n"
+                << "Held For    : " << (hold_secs / 60) << " min\n"
+                << "Unrealized PnL: " << live_pnl << " USD";
+            send_telegram(msg.str());
+        }
+
+        // --- 6. Strategy logic (all in-memory, fast) ---
         std::string signal     = "WAIT";
         int         open_count = positions_open_ ? 1 : 0;
 
@@ -1150,32 +1332,29 @@ private:
         }
         else
         {
-            long long hold_time      = (entry_time_ > 0) ? (now - entry_time_) : 0;
-            bool      exit_condition = false;
+            // Exit once |spread| has reverted to/below EXIT_SPREAD.
+            bool exit_condition = std::abs(spread) <= EXIT_SPREAD;
 
-            if      (entry_direction_ == "SHORT_PAXG" && spread <= 0) exit_condition = true;
-            else if (entry_direction_ == "LONG_PAXG"  && spread >= 0) exit_condition = true;
-
-            if ((exit_condition || std::abs(spread) >= STOP_SPREAD ||
-                 (entry_time_ > 0 && hold_time >= MAX_POSITION_HOLD_SEC))
-                && !trade_in_flight_.load())
+            if ((exit_condition || std::abs(spread) >= STOP_SPREAD) && !trade_in_flight_.load())
             {
-                if (exit_condition)             signal = "EXIT";
+                if (exit_condition)                       signal = "EXIT";
                 else if (std::abs(spread) >= STOP_SPREAD) signal = "STOP LOSS";
-                else                            signal = "TIME EXIT";
 
                 std::string reason =
-                    exit_condition             ? "Spread Crossed Zero" :
-                    std::abs(spread) >= STOP_SPREAD ? "Spread Explosion"   :
-                                                  "Max Hold Time";
+                    exit_condition ? "Spread Reverted to Exit Threshold" : "Spread Explosion";
+
+                double final_pnl = compute_unrealized_pnl(*p1, *p2);
 
                 trade_in_flight_.store(true);
-                rest_queue_.post([this, reason] { close_all_async(reason); });
+                rest_queue_.post([this, reason, final_pnl]
+                {
+                    close_all_async(reason, final_pnl);
+                });
             }
             else signal = "HOLDING";
         }
 
-        // --- 6. Dashboard (rate-limited, no I/O) ---
+        // --- 7. Dashboard (rate-limited, no I/O) ---
         dashboard(spread, signal, open_count, m1, m2);
     }
 
@@ -1331,8 +1510,8 @@ int main()
 
     try
     {
-        API_KEY          = require_env("API_KEY");
-        API_SECRET       = require_env("API_SECRET");
+        API_KEY          = require_env("API_KEY1");
+        API_SECRET       = require_env("API_SECRET1");
         TELEGRAM_TOKEN   = optional_env("TELEGRAM_TOKEN");
         TELEGRAM_CHAT_ID = optional_env("TELEGRAM_CHAT_ID");
 
@@ -1344,8 +1523,8 @@ int main()
     catch (const std::exception& e)
     {
         std::cerr << "[FATAL] " << e.what() << "\n\n";
-        std::cerr << "  API_KEY=your_api_key\n";
-        std::cerr << "  API_SECRET=your_api_secret\n";
+        std::cerr << "  API_KEY1=your_api_key\n";
+        std::cerr << "  API_SECRET1=your_api_secret\n";
         std::cerr << "  TELEGRAM_TOKEN=your_token        (optional)\n";
         std::cerr << "  TELEGRAM_CHAT_ID=your_chat_id   (optional)\n";
         return 1;
