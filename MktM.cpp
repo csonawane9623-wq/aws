@@ -662,7 +662,7 @@ int main()
     {
         ISTTime cur = now_ist();
         std::ostringstream oss;
-        oss << std::setw(2) << std::setfill('0') << cur.h << ":29:59:300";
+        oss << std::setw(2) << std::setfill('0') << cur.h << ":29:59:400";
         std::string input = oss.str();
         ++cycle;
 

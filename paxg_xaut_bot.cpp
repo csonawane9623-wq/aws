@@ -133,8 +133,8 @@ const std::string SYMBOL_2 = "XAUTUSD";
 // STRATEGY
 // ============================================================
 
-const double ENTRY_SPREAD = 5.0;
-const double EXIT_SPREAD  = 1.80;   // close position once |spread| reverts to/below this
+const double ENTRY_SPREAD = 10.0;
+const double EXIT_SPREAD  = 0.70;   // close position once |spread| reverts to/below this
 const double STOP_SPREAD  = 100.0;
 
 // ============================================================
