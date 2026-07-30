@@ -1,0 +1,1369 @@
+// =============================================================================
+// DELTA EXCHANGE INDIA - FUNDING RATE ARBITRAGE BOT (C++ PORT)
+//
+// Ported from a Python reference implementation. Behavior, thresholds and
+// control flow intentionally mirror the original as closely as C++ allows.
+//
+// Dependencies (Ubuntu/Debian):
+//   sudo apt install libcurl4-openssl-dev libssl-dev nlohmann-json3-dev
+//
+// Dependencies (MSYS2 UCRT64):
+//   pacman -S mingw-w64-ucrt-x86_64-curl mingw-w64-ucrt-x86_64-openssl \
+//             mingw-w64-ucrt-x86_64-nlohmann-json mingw-w64-ucrt-x86_64-gcc
+//
+// Build (Linux):
+//   g++ -std=c++17 -O2 funding_arb_bot.cpp -o funding_arb_bot \
+//       -lcurl -lssl -lcrypto -lpthread
+//
+// Build (MSYS2 UCRT64):
+//   g++ -std=c++17 -O2 funding_arb_bot.cpp -o funding_arb_bot.exe \
+//       -lcurl -lssl -lcrypto -lpthread -lws2_32
+//
+// Environment variables (create a .env file next to the binary, or export):
+//   API_KEY=...
+//   API_SECRET=...
+//
+// NOTE ON THE WEBSOCKET CLIENT
+// -----------------------------------------------------------------------------
+// Rather than pull in a heavyweight websocket dependency (libwebsockets,
+// IXWebSocket, etc.) which is often awkward to get consistently working
+// across Ubuntu/MSYS2 toolchains, this port implements a minimal RFC6455
+// client directly on top of OpenSSL (TLS) + BSD sockets. It supports exactly
+// what this bot needs: connect -> TLS handshake -> HTTP upgrade -> send one
+// text frame -> read text frames with a timeout -> close. This keeps the
+// dependency surface identical to your other C++ bots (curl + openssl only).
+// =============================================================================
+
+// ---- Cross-platform socket layer ------------------------------------------
+// MSYS2/MinGW (Windows) has no POSIX socket headers (arpa/inet.h, unistd.h
+// sockets, fcntl on sockets, etc.) - it uses Winsock2 instead. This block
+// gives us one small compatibility shim so the rest of the file can use
+// plain BSD-style calls (socket/connect/select/close) on both platforms.
+#if defined(_WIN32)
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    #pragma comment(lib, "ws2_32.lib")
+    using socket_t = SOCKET;
+    static constexpr socket_t INVALID_SOCK = INVALID_SOCKET;
+    static inline int close_socket(socket_t s) { return closesocket(s); }
+    static inline void set_nonblocking(socket_t s, bool nonblocking) {
+        u_long mode = nonblocking ? 1 : 0;
+        ioctlsocket(s, FIONBIO, &mode);
+    }
+    static inline bool would_block_or_in_progress() {
+        int e = WSAGetLastError();
+        return e == WSAEWOULDBLOCK || e == WSAEINPROGRESS;
+    }
+    static inline void socket_platform_init() {
+        WSADATA wsa;
+        WSAStartup(MAKEWORD(2, 2), &wsa);
+    }
+    static inline void socket_platform_cleanup() { WSACleanup(); }
+#else
+    #include <arpa/inet.h>
+    #include <netdb.h>
+    #include <sys/select.h>
+    #include <sys/socket.h>
+    #include <unistd.h>
+    #include <fcntl.h>
+    #include <errno.h>
+    using socket_t = int;
+    static constexpr socket_t INVALID_SOCK = -1;
+    static inline int close_socket(socket_t s) { return ::close(s); }
+    static inline void set_nonblocking(socket_t s, bool nonblocking) {
+        int flags = fcntl(s, F_GETFL, 0);
+        if (nonblocking) fcntl(s, F_SETFL, flags | O_NONBLOCK);
+        else fcntl(s, F_SETFL, flags & ~O_NONBLOCK);
+    }
+    static inline bool would_block_or_in_progress() {
+        return errno == EWOULDBLOCK || errno == EINPROGRESS || errno == EAGAIN;
+    }
+    static inline void socket_platform_init() {}
+    static inline void socket_platform_cleanup() {}
+#endif
+// -----------------------------------------------------------------------------
+
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/hmac.h>
+#include <openssl/rand.h>
+#include <openssl/ssl.h>
+
+#include <curl/curl.h>
+#include <nlohmann/json.hpp>
+
+#include <algorithm>
+#include <atomic>
+#include <csignal>
+#include <chrono>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <mutex>
+#include <optional>
+#include <sstream>
+#include <string>
+#include <thread>
+#include <vector>
+
+using json = nlohmann::json;
+using Clock = std::chrono::system_clock;
+
+// Delta Exchange's REST API is inconsistent about whether numeric fields are
+// sent as JSON numbers or as numeric strings (e.g. "size" is often a number,
+// "available_balance" is often a string, and it can vary by endpoint). Using
+// plain `.value<std::string>()` or `.value<long long>()` throws a
+// nlohmann::json type_error the moment the type doesn't match. These helpers
+// accept either representation.
+static double json_num(const json &j, const std::string &key, double def) {
+    if (!j.contains(key) || j[key].is_null()) return def;
+    const json &v = j[key];
+    if (v.is_number()) return v.get<double>();
+    if (v.is_string()) {
+        try { return std::stod(v.get<std::string>()); } catch (...) { return def; }
+    }
+    return def;
+}
+
+static long long json_int(const json &j, const std::string &key, long long def) {
+    if (!j.contains(key) || j[key].is_null()) return def;
+    const json &v = j[key];
+    if (v.is_number_integer() || v.is_number_unsigned()) return v.get<long long>();
+    if (v.is_number()) return (long long)v.get<double>();
+    if (v.is_string()) {
+        try { return std::stoll(v.get<std::string>()); } catch (...) { return def; }
+    }
+    return def;
+}
+
+static std::string json_str(const json &j, const std::string &key, const std::string &def = "") {
+    if (!j.contains(key) || j[key].is_null()) return def;
+    const json &v = j[key];
+    if (v.is_string()) return v.get<std::string>();
+    return v.dump(); // numbers/bools rendered as their literal text
+}
+
+// =============================================================================
+// CONFIGURATION
+// =============================================================================
+static std::string API_KEY;
+static std::string API_SECRET;
+
+static const std::string BASE_URL = "https://api.india.delta.exchange";
+static const std::string WS_HOST  = "socket.india.delta.exchange";
+static const int         WS_PORT  = 443;
+
+static const int    LEVERAGE             = 20;
+static const double POSITION_PCT         = 0.20;   // 20% of available balance
+static const double ENTRY_BEFORE_S       = 3660.0; // Enter this many seconds before funding
+static const double CLOSE_AFTER_MS       = 100.0;  // Close 100ms after funding
+static const double SCAN_INTERVAL_S      = 300.0;  // Re-scan every 5 minutes
+static const double WINDOW_S             = 14400.0;// Only act if funding <= window away
+static const double MIN_FUNDING_RATE_ABS = 0.1000; // Minimum absolute funding rate % to trade
+
+// ---- STOP LOSS CONFIG -------------------------------------------------------
+static const double STOP_LOSS_PCT     = 0.05; // % adverse move from live entry price
+static const bool   STOP_LOSS_ENABLED = true; // master switch
+static const int    MIN_STOP_TICKS    = 2;    // minimum ticks away from market price for SL
+// -----------------------------------------------------------------------------
+
+static const int IST_OFFSET_SECONDS = 5 * 3600 + 30 * 60; // Asia/Kolkata, fixed, no DST
+
+// =============================================================================
+// SMALL UTILITIES
+// =============================================================================
+static void separator(char ch = '=', int width = 110) {
+    std::cout << std::string(width, ch) << "\n";
+}
+
+static void load_dotenv(const std::string &path = ".env") {
+    std::ifstream f(path);
+    if (!f.is_open()) return;
+    std::string line;
+    while (std::getline(f, line)) {
+        if (line.empty() || line[0] == '#') continue;
+        auto eq = line.find('=');
+        if (eq == std::string::npos) continue;
+        std::string key = line.substr(0, eq);
+        std::string val = line.substr(eq + 1);
+        // trim whitespace/CR
+        auto trim = [](std::string &s) {
+            while (!s.empty() && (s.back() == '\r' || s.back() == '\n' || s.back() == ' '))
+                s.pop_back();
+        };
+        trim(key);
+        trim(val);
+        if (!val.empty() && val.front() == '"' && val.back() == '"')
+            val = val.substr(1, val.size() - 2);
+        // Don't override a real environment variable that's already set.
+        if (std::getenv(key.c_str()) != nullptr) continue;
+#if defined(_WIN32)
+        _putenv_s(key.c_str(), val.c_str());
+#else
+        setenv(key.c_str(), val.c_str(), 0);
+#endif
+    }
+}
+
+static std::string env_or(const char *name, const std::string &fallback = "") {
+    const char *v = std::getenv(name);
+    return v ? std::string(v) : fallback;
+}
+
+// time_t (UTC seconds) -> "YYYY-MM-DD HH:MM:SS IST"
+static std::string fmt_ist(long long epoch_seconds_utc) {
+    time_t t = (time_t)(epoch_seconds_utc + IST_OFFSET_SECONDS);
+    std::tm tmv{};
+#if defined(_WIN32)
+    gmtime_s(&tmv, &t); // note: argument order is reversed vs. POSIX gmtime_r
+#else
+    gmtime_r(&t, &tmv);
+#endif
+    char buf[64];
+    std::snprintf(buf, sizeof(buf), "%04d-%02d-%02d %02d:%02d:%02d IST",
+                  tmv.tm_year + 1900, tmv.tm_mon + 1, tmv.tm_mday,
+                  tmv.tm_hour, tmv.tm_min, tmv.tm_sec);
+    return std::string(buf);
+}
+
+static long long now_epoch_s() {
+    return (long long)std::time(nullptr);
+}
+
+static double now_epoch_d() {
+    return std::chrono::duration<double>(Clock::now().time_since_epoch()).count();
+}
+
+// =============================================================================
+// AUTHENTICATION (HMAC-SHA256, hex digest, via OpenSSL)
+// =============================================================================
+static std::string hmac_sha256_hex(const std::string &secret, const std::string &message) {
+    unsigned char digest[EVP_MAX_MD_SIZE];
+    unsigned int digest_len = 0;
+    HMAC(EVP_sha256(),
+         secret.data(), (int)secret.size(),
+         reinterpret_cast<const unsigned char *>(message.data()), message.size(),
+         digest, &digest_len);
+
+    std::ostringstream oss;
+    oss << std::hex << std::setfill('0');
+    for (unsigned int i = 0; i < digest_len; ++i)
+        oss << std::setw(2) << (int)digest[i];
+    return oss.str();
+}
+
+struct AuthHeaders {
+    std::string api_key;
+    std::string timestamp;
+    std::string signature;
+};
+
+static AuthHeaders auth_headers(const std::string &method, const std::string &path,
+                                 const std::string &payload = "", const std::string &query = "") {
+    AuthHeaders h;
+    h.timestamp = std::to_string(now_epoch_s());
+    std::string message = method + h.timestamp + path + query + payload;
+    h.signature = hmac_sha256_hex(API_SECRET, message);
+    h.api_key   = API_KEY;
+    return h;
+}
+
+// =============================================================================
+// TICK SIZE UTILITIES
+// Handles very small prices like 1000SATSUSD (0.000001 tick size)
+// =============================================================================
+static int tick_decimals(double tick_size) {
+    if (tick_size >= 1.0) return 0;
+    int decimals = (int)(-std::floor(std::log10(tick_size)));
+    return std::max(0, decimals);
+}
+
+static double round_to_tick(double price, double tick_size) {
+    int decimals = tick_decimals(tick_size);
+    double rounded = std::round(price / tick_size) * tick_size;
+    double mult = std::pow(10.0, decimals);
+    return std::round(rounded * mult) / mult;
+}
+
+static std::string format_price(double price, double tick_size) {
+    int decimals = tick_decimals(tick_size);
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(decimals) << price;
+    return oss.str();
+}
+
+// =============================================================================
+// STOP PRICE CALCULATION
+// For a SHORT (sell) entry -> stop is a BUY  -> price must be ABOVE market
+// For a LONG  (buy)  entry -> stop is a SELL -> price must be BELOW market
+// =============================================================================
+static std::optional<double> compute_stop_price(const std::string &side, double live_price,
+                                                  double tick_size) {
+    double raw_stop;
+    if (side == "buy")
+        raw_stop = live_price * (1.0 - STOP_LOSS_PCT / 100.0);
+    else
+        raw_stop = live_price * (1.0 + STOP_LOSS_PCT / 100.0);
+
+    double stop_price = round_to_tick(raw_stop, tick_size);
+
+    if (stop_price <= 0.0) {
+        std::printf("[WARN] Computed stop price is zero or negative (raw=%.10f, tick=%g). "
+                    "Stop-loss disabled for this trade.\n", raw_stop, tick_size);
+        return std::nullopt;
+    }
+
+    double min_distance = MIN_STOP_TICKS * tick_size;
+    if (side == "buy") {
+        // SELL stop must be below market by at least MIN_STOP_TICKS
+        if (live_price - stop_price < min_distance) {
+            stop_price = round_to_tick(live_price - min_distance, tick_size);
+            std::printf("[INFO] Stop price adjusted to maintain minimum %d-tick distance: %s\n",
+                        MIN_STOP_TICKS, format_price(stop_price, tick_size).c_str());
+        }
+    } else {
+        // BUY stop must be above market by at least MIN_STOP_TICKS
+        if (stop_price - live_price < min_distance) {
+            stop_price = round_to_tick(live_price + min_distance, tick_size);
+            std::printf("[INFO] Stop price adjusted to maintain minimum %d-tick distance: %s\n",
+                        MIN_STOP_TICKS, format_price(stop_price, tick_size).c_str());
+        }
+    }
+
+    if (stop_price <= 0.0) {
+        std::printf("[WARN] Stop price still invalid after adjustment. Stop-loss disabled for this trade.\n");
+        return std::nullopt;
+    }
+    return stop_price;
+}
+
+// =============================================================================
+// MINIMAL RFC6455 WEBSOCKET CLIENT (TLS via OpenSSL)
+// Only implements what this bot needs: connect, upgrade, send one text frame,
+// read text frames with a timeout, close.
+// =============================================================================
+class MiniWebSocket {
+public:
+    ~MiniWebSocket() { close(); }
+
+    bool connect(const std::string &host, int port, int connect_timeout_s = 8) {
+        struct addrinfo hints{}, *res = nullptr;
+        hints.ai_family   = AF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+        std::string port_str = std::to_string(port);
+        if (getaddrinfo(host.c_str(), port_str.c_str(), &hints, &res) != 0 || !res)
+            return false;
+
+        fd_ = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+        if (fd_ == INVALID_SOCK) { freeaddrinfo(res); return false; }
+
+        // Non-blocking connect with timeout.
+        set_nonblocking(fd_, true);
+
+        int rc = ::connect(fd_, res->ai_addr, (int)res->ai_addrlen);
+        freeaddrinfo(res);
+        if (rc != 0 && !would_block_or_in_progress()) { close(); return false; }
+
+        fd_set wfds;
+        FD_ZERO(&wfds);
+        FD_SET(fd_, &wfds);
+        timeval tv{connect_timeout_s, 0};
+        rc = select((int)fd_ + 1, nullptr, &wfds, nullptr, &tv);
+        if (rc <= 0) { close(); return false; }
+
+        int so_error = 0;
+        socklen_t len = sizeof(so_error);
+        getsockopt(fd_, SOL_SOCKET, SO_ERROR, (char *)&so_error, &len);
+        if (so_error != 0) { close(); return false; }
+
+        set_nonblocking(fd_, false); // back to blocking for the TLS handshake
+
+        ctx_ = SSL_CTX_new(TLS_client_method());
+        if (!ctx_) { close(); return false; }
+        SSL_CTX_set_default_verify_paths(ctx_);
+        SSL_CTX_set_verify(ctx_, SSL_VERIFY_PEER, nullptr);
+
+        ssl_ = SSL_new(ctx_);
+        SSL_set_fd(ssl_, (int)fd_);
+        SSL_set_tlsext_host_name(ssl_, host.c_str());
+        SSL_set1_host(ssl_, host.c_str());
+
+        if (SSL_connect(ssl_) != 1) { close(); return false; }
+
+        // Back to non-blocking for the frame read loop.
+        set_nonblocking(fd_, true);
+        return true;
+    }
+
+    bool handshake(const std::string &host, const std::string &path) {
+        unsigned char key_raw[16];
+        RAND_bytes(key_raw, sizeof(key_raw));
+        std::string sec_key = base64_encode(key_raw, sizeof(key_raw));
+
+        std::ostringstream req;
+        req << "GET " << path << " HTTP/1.1\r\n"
+            << "Host: " << host << "\r\n"
+            << "Upgrade: websocket\r\n"
+            << "Connection: Upgrade\r\n"
+            << "Sec-WebSocket-Key: " << sec_key << "\r\n"
+            << "Sec-WebSocket-Version: 13\r\n"
+            << "\r\n";
+        std::string req_s = req.str();
+        if (!ssl_write_all(req_s)) return false;
+
+        std::string resp;
+        auto deadline = Clock::now() + std::chrono::seconds(8);
+        while (resp.find("\r\n\r\n") == std::string::npos) {
+            if (Clock::now() > deadline) return false;
+            char buf[2048];
+            int n = poll_and_read(buf, sizeof(buf), 200);
+            if (n > 0) resp.append(buf, n);
+            else if (n < 0) return false;
+        }
+        return resp.find("101") != std::string::npos; // "HTTP/1.1 101 Switching Protocols"
+    }
+
+    bool send_text(const std::string &payload) {
+        std::string frame;
+        frame.push_back((char)0x81); // FIN + text opcode
+
+        unsigned char mask_key[4];
+        RAND_bytes(mask_key, sizeof(mask_key));
+
+        size_t len = payload.size();
+        if (len <= 125) {
+            frame.push_back((char)(0x80 | len));
+        } else if (len <= 65535) {
+            frame.push_back((char)(0x80 | 126));
+            frame.push_back((char)((len >> 8) & 0xFF));
+            frame.push_back((char)(len & 0xFF));
+        } else {
+            frame.push_back((char)(0x80 | 127));
+            for (int i = 7; i >= 0; --i)
+                frame.push_back((char)((len >> (8 * i)) & 0xFF));
+        }
+        frame.append(reinterpret_cast<const char *>(mask_key), 4);
+        for (size_t i = 0; i < len; ++i)
+            frame.push_back((char)(payload[i] ^ mask_key[i % 4]));
+
+        return ssl_write_all(frame);
+    }
+
+    // Reads one WS text-frame payload within timeout_ms. Returns false on
+    // timeout/error, true with `out` populated on success. Auto-replies to pings.
+    bool recv_text(std::string &out, int timeout_ms) {
+        auto deadline = Clock::now() + std::chrono::milliseconds(timeout_ms);
+        while (Clock::now() < deadline) {
+            int remaining_ms = (int)std::chrono::duration_cast<std::chrono::milliseconds>(
+                                    deadline - Clock::now()).count();
+            if (remaining_ms <= 0) break;
+
+            if (!read_frame_header(std::min(remaining_ms, 500))) continue;
+
+            uint8_t opcode = header_byte0_ & 0x0F;
+            uint64_t plen = payload_len_;
+            std::string payload;
+            payload.resize(plen);
+            size_t got = 0;
+            while (got < plen) {
+                int chunk_deadline_ms = (int)std::chrono::duration_cast<std::chrono::milliseconds>(
+                                             deadline - Clock::now()).count();
+                if (chunk_deadline_ms <= 0) return false;
+                int n = poll_and_read(&payload[got], plen - got, std::min(chunk_deadline_ms, 500));
+                if (n > 0) got += n;
+                else if (n < 0) return false;
+            }
+
+            if (opcode == 0x1) { // text frame
+                out = payload;
+                return true;
+            } else if (opcode == 0x9) { // ping -> pong
+                send_pong(payload);
+            } else if (opcode == 0x8) { // close
+                return false;
+            }
+            // ignore other control/continuation frames for this simple use case
+        }
+        return false;
+    }
+
+    void close() {
+        if (ssl_) { SSL_shutdown(ssl_); SSL_free(ssl_); ssl_ = nullptr; }
+        if (ctx_) { SSL_CTX_free(ctx_); ctx_ = nullptr; }
+        if (fd_ != INVALID_SOCK) { close_socket(fd_); fd_ = INVALID_SOCK; }
+    }
+
+private:
+    socket_t fd_ = INVALID_SOCK;
+    SSL_CTX *ctx_ = nullptr;
+    SSL *ssl_ = nullptr;
+    uint8_t header_byte0_ = 0;
+    uint64_t payload_len_ = 0;
+
+    bool ssl_write_all(const std::string &data) {
+        size_t sent = 0;
+        while (sent < data.size()) {
+            int n = SSL_write(ssl_, data.data() + sent, (int)(data.size() - sent));
+            if (n <= 0) {
+                int err = SSL_get_error(ssl_, n);
+                if (err == SSL_ERROR_WANT_WRITE || err == SSL_ERROR_WANT_READ) continue;
+                return false;
+            }
+            sent += n;
+        }
+        return true;
+    }
+
+    // Returns bytes read (>0), 0 on timeout, -1 on error.
+    int poll_and_read(void *buf, size_t maxlen, int timeout_ms) {
+        fd_set rfds;
+        FD_ZERO(&rfds);
+        FD_SET(fd_, &rfds);
+        timeval tv{timeout_ms / 1000, (timeout_ms % 1000) * 1000};
+        int rc = select((int)fd_ + 1, &rfds, nullptr, nullptr, &tv);
+        if (rc == 0) return 0;
+        if (rc < 0) return -1;
+
+        int n = SSL_read(ssl_, buf, (int)maxlen);
+        if (n > 0) return n;
+        int err = SSL_get_error(ssl_, n);
+        if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) return 0;
+        return -1;
+    }
+
+    bool read_frame_header(int timeout_ms) {
+        unsigned char b0b1[2];
+        size_t got = 0;
+        auto deadline = Clock::now() + std::chrono::milliseconds(timeout_ms);
+        while (got < 2) {
+            if (Clock::now() > deadline) return false;
+            int n = poll_and_read(reinterpret_cast<char *>(b0b1) + got, 2 - got, 200);
+            if (n > 0) got += n;
+            else if (n < 0) return false;
+        }
+        header_byte0_ = b0b1[0];
+        uint8_t len7 = b0b1[1] & 0x7F; // server frames are unmasked
+        if (len7 <= 125) {
+            payload_len_ = len7;
+        } else if (len7 == 126) {
+            unsigned char ext[2];
+            if (!read_exact(ext, 2, timeout_ms)) return false;
+            payload_len_ = (uint64_t(ext[0]) << 8) | ext[1];
+        } else {
+            unsigned char ext[8];
+            if (!read_exact(ext, 8, timeout_ms)) return false;
+            payload_len_ = 0;
+            for (int i = 0; i < 8; ++i) payload_len_ = (payload_len_ << 8) | ext[i];
+        }
+        return true;
+    }
+
+    bool read_exact(unsigned char *buf, size_t n, int timeout_ms) {
+        size_t got = 0;
+        auto deadline = Clock::now() + std::chrono::milliseconds(timeout_ms);
+        while (got < n) {
+            if (Clock::now() > deadline) return false;
+            int r = poll_and_read(buf + got, n - got, 200);
+            if (r > 0) got += r;
+            else if (r < 0) return false;
+        }
+        return true;
+    }
+
+    void send_pong(const std::string &payload) {
+        std::string frame;
+        frame.push_back((char)0x8A); // FIN + pong opcode
+        unsigned char mask_key[4];
+        RAND_bytes(mask_key, sizeof(mask_key));
+        frame.push_back((char)(0x80 | payload.size()));
+        frame.append(reinterpret_cast<const char *>(mask_key), 4);
+        for (size_t i = 0; i < payload.size(); ++i)
+            frame.push_back((char)(payload[i] ^ mask_key[i % 4]));
+        ssl_write_all(frame);
+    }
+
+    static std::string base64_encode(const unsigned char *data, size_t len) {
+        std::string out;
+        out.resize(4 * ((len + 2) / 3));
+        int n = EVP_EncodeBlock(reinterpret_cast<unsigned char *>(&out[0]), data, (int)len);
+        out.resize(n);
+        return out;
+    }
+};
+
+// Subscribes to the funding_rate WS channel for `symbol` and returns
+// next_funding_realization in microseconds (UTC epoch), or nullopt on timeout.
+static std::optional<long long> get_next_funding_time_ws(const std::string &symbol, int timeout_s = 8) {
+    MiniWebSocket ws;
+    if (!ws.connect(WS_HOST, WS_PORT, timeout_s)) return std::nullopt;
+    if (!ws.handshake(WS_HOST, "/")) return std::nullopt;
+
+    json sub = {
+        {"type", "subscribe"},
+        {"payload", {
+            {"channels", json::array({
+                {{"name", "funding_rate"}, {"symbols", json::array({symbol})}}
+            })}
+        }}
+    };
+    if (!ws.send_text(sub.dump())) return std::nullopt;
+
+    auto deadline = Clock::now() + std::chrono::seconds(timeout_s);
+    while (Clock::now() < deadline) {
+        int remaining_ms = (int)std::chrono::duration_cast<std::chrono::milliseconds>(
+                                deadline - Clock::now()).count();
+        if (remaining_ms <= 0) break;
+        std::string msg;
+        if (!ws.recv_text(msg, remaining_ms)) continue;
+        try {
+            json data = json::parse(msg);
+            if (data.value("type", "") == "funding_rate" && data.contains("nfr")) {
+                // nfr may arrive as a number or a numeric string depending on payload
+                if (data["nfr"].is_number())
+                    return data["nfr"].get<long long>();
+                else
+                    return std::stoll(data["nfr"].get<std::string>());
+            }
+        } catch (...) {
+            // ignore malformed/irrelevant messages
+        }
+    }
+    return std::nullopt;
+}
+
+// Epoch-aligned next funding time fallback (e.g. interval=3600 -> next top-of-hour UTC).
+static long long get_next_funding_time_fallback(int interval_s) {
+    long long now_s = now_epoch_s();
+    long long next_s = ((now_s / interval_s) + 1) * (long long)interval_s;
+    return next_s * 1'000'000LL;
+}
+
+// =============================================================================
+// HTTP (libcurl) LAYER
+// =============================================================================
+struct HttpResponse {
+    long status = 0;
+    std::string body;
+    bool ok = false; // transport-level success (curl call itself didn't error)
+};
+
+static size_t curl_write_cb(char *ptr, size_t size, size_t nmemb, void *userdata) {
+    auto *out = static_cast<std::string *>(userdata);
+    out->append(ptr, size * nmemb);
+    return size * nmemb;
+}
+
+class HttpClient {
+public:
+    HttpClient() { curl_global_init(CURL_GLOBAL_DEFAULT); }
+    ~HttpClient() { curl_global_cleanup(); }
+
+    HttpResponse request(const std::string &method, const std::string &url,
+                          const std::string &body, const std::vector<std::string> &headers) {
+        HttpResponse resp;
+        CURL *curl = curl_easy_init();
+        if (!curl) return resp;
+
+        struct curl_slist *hdrs = nullptr;
+        for (auto &h : headers) hdrs = curl_slist_append(hdrs, h.c_str());
+
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hdrs);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curl_write_cb);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &resp.body);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
+        curl_easy_setopt(curl, CURLOPT_USERAGENT, "rest-client");
+
+        if (method == "GET") {
+            curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+        } else if (method == "POST") {
+            curl_easy_setopt(curl, CURLOPT_POST, 1L);
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)body.size());
+        } else if (method == "DELETE") {
+            curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, (long)body.size());
+        }
+
+        CURLcode rc = curl_easy_perform(curl);
+        if (rc == CURLE_OK) {
+            resp.ok = true;
+            curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &resp.status);
+        }
+        curl_slist_free_all(hdrs);
+        curl_easy_cleanup(curl);
+        return resp;
+    }
+};
+
+static HttpClient g_http;
+
+static std::vector<std::string> base_headers() {
+    return {"Content-Type: application/json"};
+}
+
+static std::vector<std::string> signed_headers(const AuthHeaders &a) {
+    return {
+        "api-key: " + a.api_key,
+        "timestamp: " + a.timestamp,
+        "signature: " + a.signature,
+        "Content-Type: application/json",
+        "User-Agent: rest-client",
+    };
+}
+
+// =============================================================================
+// REST API CALLS
+// =============================================================================
+static std::vector<json> get_all_perpetuals() {
+    std::string url = BASE_URL + "/v2/tickers?contract_types=perpetual_futures";
+    HttpResponse r = g_http.request("GET", url, "", base_headers());
+    if (r.status == 429) {
+        std::printf("[WARN] Rate limit hit on get_all_perpetuals. Sleeping 10s.\n");
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        return {};
+    }
+    if (!r.ok) return {};
+    try {
+        json j = json::parse(r.body);
+        if (j.value("success", false))
+            return j["result"].get<std::vector<json>>();
+    } catch (...) {}
+    return {};
+}
+
+static std::optional<json> get_product_details(const std::string &symbol) {
+    std::string url = BASE_URL + "/v2/products/" + symbol;
+    HttpResponse r = g_http.request("GET", url, "", base_headers());
+    if (r.status == 429) {
+        std::printf("[WARN] Rate limit hit on get_product_details. Sleeping 10s.\n");
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        return std::nullopt;
+    }
+    if (!r.ok) return std::nullopt;
+    try {
+        json j = json::parse(r.body);
+        if (j.value("success", false)) return j["result"];
+    } catch (...) {}
+    return std::nullopt;
+}
+
+static double get_wallet_balance() {
+    std::string path = "/v2/wallet/balances";
+    AuthHeaders a = auth_headers("GET", path);
+    HttpResponse r = g_http.request("GET", BASE_URL + path, "", signed_headers(a));
+    if (r.status == 429) {
+        std::printf("[WARN] Rate limit hit on get_wallet_balance. Sleeping 10s.\n");
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        return 0.0;
+    }
+    if (!r.ok) return 0.0;
+    try {
+        json j = json::parse(r.body);
+        if (j.value("success", false)) {
+            std::vector<std::string> symbols;
+            for (auto &b : j["result"]) {
+                std::string sym = json_str(b, "asset_symbol", "");
+                symbols.push_back(sym);
+                if (sym == "USD") return json_num(b, "available_balance", 0.0);
+            }
+            std::string joined;
+            for (auto &s : symbols) joined += s + " ";
+            std::printf("[WARN] 'USD' not found in wallet. Available asset symbols: %s\n", joined.c_str());
+        } else {
+            std::printf("[ERROR] get_wallet_balance API error: %s\n", r.body.substr(0, 300).c_str());
+        }
+    } catch (const std::exception &e) {
+        std::printf("[ERROR] get_wallet_balance parse error: %s\n", e.what());
+    }
+    return 0.0;
+}
+
+static bool set_leverage(long long product_id, int leverage) {
+    std::string path = "/v2/products/" + std::to_string(product_id) + "/orders/leverage";
+    json body = {{"leverage", std::to_string(leverage)}};
+    std::string payload = body.dump();
+    AuthHeaders a = auth_headers("POST", path, payload);
+    HttpResponse r = g_http.request("POST", BASE_URL + path, payload, signed_headers(a));
+    if (!r.ok) return false;
+    try {
+        json j = json::parse(r.body);
+        return j.value("success", false);
+    } catch (...) { return false; }
+}
+
+static std::optional<json> place_market_order(long long product_id, const std::string &side, long long size) {
+    std::string path = "/v2/orders";
+    json body = {
+        {"product_id", product_id},
+        {"side", side},
+        {"size", size},
+        {"order_type", "market_order"}
+    };
+    std::string payload = body.dump();
+    AuthHeaders a = auth_headers("POST", path, payload);
+    HttpResponse r = g_http.request("POST", BASE_URL + path, payload, signed_headers(a));
+    if (r.status == 429) {
+        std::printf("[WARN] Rate limit hit on place_market_order. Sleeping 10s.\n");
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        return std::nullopt;
+    }
+    if (!r.ok) return std::nullopt;
+    try {
+        json j = json::parse(r.body);
+        if (j.value("success", false)) return j["result"];
+        std::printf("[ERROR] place_market_order response: %s\n", r.body.c_str());
+    } catch (const std::exception &e) {
+        std::printf("[ERROR] place_market_order parse error: %s\n", e.what());
+    }
+    return std::nullopt;
+}
+
+// reduce_only is a string enum ("true"/"false") on Delta Exchange API.
+static std::optional<json> place_stop_order(long long product_id, const std::string &side, long long size,
+                                             double stop_price, double tick_size) {
+    std::string price_str = format_price(stop_price, tick_size);
+    std::string path = "/v2/orders";
+    json body = {
+        {"product_id", product_id},
+        {"side", side},
+        {"size", size},
+        {"order_type", "market_order"},
+        {"stop_order_type", "stop_loss_order"},
+        {"stop_price", price_str},
+        {"reduce_only", "true"}
+    };
+    std::string payload = body.dump();
+    AuthHeaders a = auth_headers("POST", path, payload);
+    HttpResponse r = g_http.request("POST", BASE_URL + path, payload, signed_headers(a));
+    if (r.status == 429) {
+        std::printf("[WARN] Rate limit hit on place_stop_order. Sleeping 10s.\n");
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        return std::nullopt;
+    }
+    if (!r.ok) return std::nullopt;
+    try {
+        json j = json::parse(r.body);
+        if (j.value("success", false)) return j["result"];
+        std::printf("[ERROR] place_stop_order response: %s\n", r.body.c_str());
+    } catch (const std::exception &e) {
+        std::printf("[ERROR] place_stop_order parse error: %s\n", e.what());
+    }
+    return std::nullopt;
+}
+
+static bool cancel_order(long long product_id, std::optional<long long> order_id) {
+    if (!order_id.has_value()) return true;
+    std::string path = "/v2/orders";
+    json body = {{"id", *order_id}, {"product_id", product_id}};
+    std::string payload = body.dump();
+    AuthHeaders a = auth_headers("DELETE", path, payload);
+    HttpResponse r = g_http.request("DELETE", BASE_URL + path, payload, signed_headers(a));
+    if (!r.ok) return false;
+    try {
+        json j = json::parse(r.body);
+        if (j.value("success", false)) return true;
+        std::printf("[WARN] cancel_order response: %s\n", r.body.c_str());
+    } catch (const std::exception &e) {
+        std::printf("[ERROR] cancel_order parse error: %s\n", e.what());
+    }
+    return false;
+}
+
+static std::optional<json> get_position(long long product_id) {
+    std::string path = "/v2/positions";
+    std::string query = "?product_id=" + std::to_string(product_id);
+    AuthHeaders a = auth_headers("GET", path, "", query);
+    HttpResponse r = g_http.request("GET", BASE_URL + path + query, "", signed_headers(a));
+    if (r.status == 429) {
+        std::printf("[WARN] Rate limit hit on get_position. Sleeping 10s.\n");
+        std::this_thread::sleep_for(std::chrono::seconds(10));
+        return std::nullopt;
+    }
+    if (!r.ok) return std::nullopt;
+    try {
+        json j = json::parse(r.body);
+        if (j.value("success", false)) {
+            json res = j["result"];
+            if (res.is_array()) {
+                if (!res.empty()) return res[0];
+                return std::nullopt;
+            }
+            return res;
+        }
+    } catch (...) {}
+    return std::nullopt;
+}
+
+// Closes an open position. Retries once if the first close attempt results in
+// a residual position (partial fill guard).
+static bool close_position(long long product_id, const std::string &symbol) {
+    for (int attempt = 1; attempt <= 2; ++attempt) {
+        auto pos = get_position(product_id);
+        if (!pos.has_value()) {
+            std::printf("[WARN] No position found for %s (attempt %d)\n", symbol.c_str(), attempt);
+            return false;
+        }
+        long long size = std::llabs(json_int(*pos, "size", 0));
+        if (size == 0) {
+            std::printf("[INFO] Position fully closed for %s\n", symbol.c_str());
+            return true;
+        }
+        std::string close_side = (json_int(*pos, "size", 0) > 0) ? "sell" : "buy";
+        auto result = place_market_order(product_id, close_side, size);
+        if (result.has_value()) {
+            std::printf("[CLOSE] %s | attempt=%d | side=%s | size=%lld | order_id=%s\n",
+                        symbol.c_str(), attempt, close_side.c_str(), size,
+                        result->contains("id") ? result->at("id").dump().c_str() : "N/A");
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        } else {
+            std::printf("[ERROR] Close order failed for %s on attempt %d\n", symbol.c_str(), attempt);
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+    }
+
+    auto pos = get_position(product_id);
+    long long residual = pos.has_value() ? std::llabs(json_int(*pos, "size", 0)) : 0;
+    if (residual > 0) {
+        std::printf("[WARN] Residual position of %lld contracts remains for %s after 2 close attempts.\n",
+                    residual, symbol.c_str());
+        return false;
+    }
+    return true;
+}
+
+// =============================================================================
+// CONTRACT SELECTION
+// =============================================================================
+struct RatedContract {
+    double abs_rate;
+    double rate;
+    json contract;
+};
+
+static std::optional<RatedContract> select_best_contract() {
+    auto contracts = get_all_perpetuals();
+    if (contracts.empty()) {
+        std::printf("[ERROR] No perpetual contracts fetched.\n");
+        return std::nullopt;
+    }
+
+    std::vector<RatedContract> rated;
+    for (auto &t : contracts) {
+        try {
+            double rate = json_num(t, "funding_rate", 0.0);
+            double abs_rate = std::fabs(rate);
+            if (abs_rate < MIN_FUNDING_RATE_ABS) continue;
+            rated.push_back({abs_rate, rate, t});
+        } catch (...) { continue; }
+    }
+
+    std::sort(rated.begin(), rated.end(),
+              [](const RatedContract &a, const RatedContract &b) { return a.abs_rate > b.abs_rate; });
+
+    separator();
+    std::printf("  Threshold filter: |funding rate| >= %.4f%%\n", MIN_FUNDING_RATE_ABS);
+    separator('-');
+
+    if (rated.empty()) {
+        std::printf("  No contracts meet the >= %.4f%% threshold. Skipping cycle.\n", MIN_FUNDING_RATE_ABS);
+        separator();
+        return std::nullopt;
+    }
+
+    std::printf("%-6s %-18s %15s  %-10s\n", "RANK", "SYMBOL", "FUNDING RATE", "DIRECTION");
+    separator('-');
+    for (size_t i = 0; i < std::min<size_t>(10, rated.size()); ++i) {
+        std::string direction = rated[i].rate > 0 ? "SHORT" : "LONG";
+        std::printf("%-6zu %-18s %+14.6f%%  %-10s\n", i + 1,
+                    rated[i].contract.value("symbol", std::string("")).c_str(), rated[i].rate, direction.c_str());
+    }
+    separator();
+    return rated[0];
+}
+
+// =============================================================================
+// TRADE DETAIL DISPLAY
+// =============================================================================
+static void display_trade_details(
+    const std::string &symbol, long long product_id, const std::string &side, long long size,
+    double funding_rate, double mark_price, double contract_value, const std::string &contract_unit,
+    double tick_size, double initial_margin, double maint_margin, double taker_fee, double maker_fee,
+    double interval_h, long long next_funding_micro, long long entry_ts_s, long long close_ts_s,
+    double balance, int leverage, std::optional<double> stop_price)
+{
+    double notional        = size * contract_value * mark_price;
+    double margin_required = notional * (initial_margin / 100.0) / leverage;
+    double est_funding_pnl = notional * (std::fabs(funding_rate) / 100.0);
+    double est_taker_cost  = notional * taker_fee * 2.0;
+
+    separator();
+    std::printf("  TRADE CONFIGURATION & CONTRACT DETAILS\n");
+    separator();
+    std::printf("  %-35s %s\n", "Symbol", symbol.c_str());
+    std::printf("  %-35s %lld\n", "Product ID", product_id);
+    std::string side_upper = side; for (auto &c : side_upper) c = toupper(c);
+    std::printf("  %-35s %s\n", "Direction", side_upper.c_str());
+    std::printf("  %-35s Market Order\n", "Order Type");
+    separator('-');
+    std::printf("  %-35s %s\n", "Mark Price", format_price(mark_price, tick_size).c_str());
+    std::printf("  %-35s %g %s\n", "Contract Value", contract_value, contract_unit.c_str());
+    std::printf("  %-35s %g\n", "Tick Size", tick_size);
+    std::printf("  %-35s %g%%\n", "Initial Margin", initial_margin);
+    std::printf("  %-35s %g%%\n", "Maintenance Margin", maint_margin);
+    std::printf("  %-35s %.4f%%\n", "Taker Fee", taker_fee * 100.0);
+    std::printf("  %-35s %.4f%%\n", "Maker Fee", maker_fee * 100.0);
+    separator('-');
+    std::printf("  %-35s %+.6f%%\n", "Funding Rate", funding_rate);
+    std::printf("  %-35s >= %.4f%% (absolute)\n", "Funding Rate Threshold", MIN_FUNDING_RATE_ABS);
+    std::printf("  %-35s %.2f hour(s)\n", "Funding Interval", interval_h);
+    std::printf("  %-35s %s\n", "Next Funding Time (IST)", fmt_ist(next_funding_micro / 1'000'000).c_str());
+    separator('-');
+    std::printf("  %-35s $%.2f\n", "Available Balance", balance);
+    std::printf("  %-35s %dx\n", "Leverage", leverage);
+    std::printf("  %-35s %lld\n", "Position Size (contracts)", size);
+    std::printf("  %-35s $%.2f\n", "Notional Value", notional);
+    std::printf("  %-35s $%.4f\n", "Margin Required (approx)", margin_required);
+    std::printf("  %-35s $%.4f\n", "Est. Funding PnL (approx)", est_funding_pnl);
+    std::printf("  %-35s $%.4f\n", "Est. Taker Fee Cost (approx)", est_taker_cost);
+    if (stop_price.has_value()) {
+        std::printf("  %-35s %s  (%.2f%% adverse move, min %d ticks)\n", "Stop Loss Trigger Price",
+                    format_price(*stop_price, tick_size).c_str(), STOP_LOSS_PCT, MIN_STOP_TICKS);
+    } else {
+        std::printf("  %-35s DISABLED\n", "Stop Loss");
+    }
+    separator('-');
+    std::printf("  %-35s %s\n", "Entry Time (IST)", fmt_ist(entry_ts_s).c_str());
+    std::printf("  %-35s %s\n", "Funding Settlement (IST)", fmt_ist(next_funding_micro / 1'000'000).c_str());
+    std::printf("  %-35s %s\n", "Close Time (IST)", fmt_ist(close_ts_s).c_str());
+    separator();
+}
+
+// =============================================================================
+// WAIT HELPER
+// =============================================================================
+static void wait_until_ts(double target_ts_s, const std::string &label) {
+    while (true) {
+        double diff = target_ts_s - now_epoch_d();
+        if (diff <= 0) break;
+        long long remaining_s = (long long)target_ts_s;
+        std::printf("\r[WAIT] %s | Target: %s | Remaining: %.1fs   ",
+                    label.c_str(), fmt_ist(remaining_s).c_str(), diff);
+        std::fflush(stdout);
+        std::this_thread::sleep_for(std::chrono::milliseconds(diff < 2.0 ? 200 : 1000));
+    }
+    std::printf("\n");
+}
+
+// =============================================================================
+// MAIN LOOP
+// =============================================================================
+static std::atomic<bool> g_stop_requested{false};
+static std::optional<long long> g_active_product_id;
+static std::optional<long long> g_active_stop_order_id;
+static std::mutex g_state_mutex;
+
+static void signal_handler(int) { g_stop_requested = true; }
+
+static void run_bot() {
+    separator();
+    std::printf("  DELTA EXCHANGE - FUNDING ARBITRAGE BOT  (FULLY AUTOMATIC) [C++]\n");
+    std::printf("  Started at        : %s\n", fmt_ist(now_epoch_s()).c_str());
+    std::printf("  Leverage          : %dx\n", LEVERAGE);
+    std::printf("  Position          : %d%% of available balance\n", (int)(POSITION_PCT * 100));
+    std::printf("  Min Funding Rate  : >= %.4f%% (absolute)\n", MIN_FUNDING_RATE_ABS);
+    std::printf("  Entry             : %.0fs before funding settlement\n", ENTRY_BEFORE_S);
+    std::printf("  Close             : %.0fms after funding settlement\n", CLOSE_AFTER_MS);
+    std::printf("  Scan every        : %.0fs | Act only if funding <= %.0fs away\n", SCAN_INTERVAL_S, WINDOW_S);
+    if (STOP_LOSS_ENABLED)
+        std::printf("  Stop Loss         : ENABLED @ %.2f%% adverse move (min %d ticks)\n",
+                    STOP_LOSS_PCT, MIN_STOP_TICKS);
+    else
+        std::printf("  Stop Loss         : DISABLED\n");
+    separator();
+
+    while (!g_stop_requested) {
+        try {
+            double loop_start = now_epoch_d();
+            std::printf("\n[SCAN] %s - Scanning best perpetual contract...\n", fmt_ist(now_epoch_s()).c_str());
+
+            // 1. Select best contract by highest absolute funding rate.
+            auto best = select_best_contract();
+            if (!best.has_value()) {
+                double elapsed = now_epoch_d() - loop_start;
+                double sleep_s = std::max(0.0, SCAN_INTERVAL_S - elapsed);
+                std::printf("[WAIT] No qualifying contract found. Next scan in %.0fs.\n", sleep_s);
+                std::this_thread::sleep_for(std::chrono::duration<double>(sleep_s));
+                continue;
+            }
+
+            std::string symbol     = json_str(best->contract, "symbol", "");
+            long long product_id   = json_int(best->contract, "product_id", 0);
+            double rate            = best->rate;
+            double mark_price      = json_num(best->contract, "mark_price", 0.0);
+            std::string side       = (rate > 0) ? "sell" : "buy";
+
+            // 2. Fetch product details for contract specs.
+            auto product = get_product_details(symbol);
+            if (!product.has_value()) {
+                std::printf("[WARN] Could not fetch product details for %s. Skipping.\n", symbol.c_str());
+                std::this_thread::sleep_for(std::chrono::seconds(60));
+                continue;
+            }
+
+            double contract_value = json_num(*product, "contract_value", 1.0);
+            std::string contract_unit = json_str(*product, "contract_unit_currency", "USD");
+            double tick_size = json_num(*product, "tick_size", 0.5);
+            double initial_margin = json_num(*product, "initial_margin", 1.0);
+            double maint_margin   = json_num(*product, "maintenance_margin", 0.5);
+            double taker_fee      = json_num(*product, "taker_commission_rate", 0.0005);
+            double maker_fee      = json_num(*product, "maker_commission_rate", 0.0002);
+            int interval_s = 3600;
+            if (product->contains("product_specs") && (*product)["product_specs"].contains("rate_exchange_interval"))
+                interval_s = (int)json_int((*product)["product_specs"], "rate_exchange_interval", 3600);
+            double interval_h = interval_s / 3600.0;
+
+            // 3. Get next funding time (WebSocket first, fallback to epoch-align).
+            std::printf("[INFO] Fetching next funding time for %s via WebSocket...\n", symbol.c_str());
+            auto next_funding_micro_opt = get_next_funding_time_ws(symbol);
+            long long next_funding_micro;
+            if (!next_funding_micro_opt.has_value()) {
+                std::printf("[WARN] WebSocket timeout. Using epoch-aligned fallback.\n");
+                next_funding_micro = get_next_funding_time_fallback(interval_s);
+            } else {
+                next_funding_micro = *next_funding_micro_opt;
+            }
+
+            double next_funding_s = next_funding_micro / 1'000'000.0;
+            double secs_to_funding = next_funding_s - now_epoch_d();
+
+            std::printf("[INFO] Next funding for %s: %s\n", symbol.c_str(),
+                        fmt_ist(next_funding_micro / 1'000'000).c_str());
+            std::printf("[INFO] Time to funding: %.1fs\n", secs_to_funding);
+
+            // 4. Check if funding is within the action window.
+            if (secs_to_funding > WINDOW_S) {
+                std::printf("[SKIP] Funding is %.0fs away (> %.0fs window). Will re-scan in %.0fs.\n",
+                            secs_to_funding, WINDOW_S, SCAN_INTERVAL_S);
+                double elapsed = now_epoch_d() - loop_start;
+                double sleep_s = std::max(0.0, SCAN_INTERVAL_S - elapsed);
+                std::this_thread::sleep_for(std::chrono::duration<double>(sleep_s));
+                continue;
+            }
+            if (secs_to_funding <= 0) {
+                std::printf("[SKIP] Funding already passed. Re-scanning.\n");
+                std::this_thread::sleep_for(std::chrono::seconds(10));
+                continue;
+            }
+
+            // 5. Close any existing position from a previous cycle.
+            if (g_active_product_id.has_value() && *g_active_product_id != product_id) {
+                std::printf("[INFO] Closing previous position (product_id=%lld)\n", *g_active_product_id);
+                if (g_active_stop_order_id.has_value()) {
+                    cancel_order(*g_active_product_id, g_active_stop_order_id);
+                    g_active_stop_order_id.reset();
+                }
+                close_position(*g_active_product_id, "previous_contract");
+                g_active_product_id.reset();
+            }
+
+            // 6. Calculate position size.
+            double balance = get_wallet_balance();
+            if (balance <= 0) {
+                std::printf("[ERROR] Could not fetch wallet balance or balance is zero.\n");
+                std::this_thread::sleep_for(std::chrono::seconds(60));
+                continue;
+            }
+            double raw_size = (balance * POSITION_PCT * LEVERAGE) / (contract_value * mark_price);
+            long long size = std::max<long long>(1, (long long)raw_size);
+
+            // 7. Calculate entry and close timestamps.
+            double entry_ts_s = next_funding_s - ENTRY_BEFORE_S;
+            double close_ts_s = next_funding_s + (CLOSE_AFTER_MS / 1000.0);
+
+            // 8. Set leverage.
+            if (set_leverage(product_id, LEVERAGE))
+                std::printf("[INFO] Leverage set to %dx for %s\n", LEVERAGE, symbol.c_str());
+            else
+                std::printf("[WARN] Could not set leverage for %s. Proceeding anyway.\n", symbol.c_str());
+
+            // 9. Wait until ENTRY_BEFORE_S seconds before funding, then re-verify live funding rate.
+            wait_until_ts(entry_ts_s, "Waiting to enter " + symbol + " (" + side + ")");
+
+            std::printf("\n[VERIFY] Re-checking live funding rate for %s before entry...\n", symbol.c_str());
+            auto live_contracts = get_all_perpetuals();
+            std::optional<double> live_rate;
+            double live_price = mark_price;
+            for (auto &c : live_contracts) {
+                if (c.value("symbol", std::string("")) == symbol) {
+                    live_rate  = json_num(c, "funding_rate", 0.0);
+                    live_price = json_num(c, "mark_price", mark_price);
+                    break;
+                }
+            }
+
+            if (!live_rate.has_value()) {
+                std::printf("[SKIP] Could not fetch live funding rate for %s. Aborting entry.\n", symbol.c_str());
+                std::this_thread::sleep_for(std::chrono::seconds(10));
+                continue;
+            }
+            if (std::fabs(*live_rate) < MIN_FUNDING_RATE_ABS) {
+                std::printf("[SKIP] Live funding rate %+.6f%% is below threshold |%.4f%%|. Aborting entry.\n",
+                            *live_rate, MIN_FUNDING_RATE_ABS);
+                std::this_thread::sleep_for(std::chrono::seconds(10));
+                continue;
+            }
+
+            side = (*live_rate > 0) ? "sell" : "buy";
+            std::string side_upper = side; for (auto &c : side_upper) c = toupper(c);
+            std::printf("[VERIFY] Live funding rate %+.6f%% meets threshold. Proceeding with %s entry.\n",
+                        *live_rate, side_upper.c_str());
+
+            // 9b. Compute stop-loss trigger price.
+            std::optional<double> stop_price;
+            std::string stop_side;
+            if (STOP_LOSS_ENABLED) {
+                stop_price = compute_stop_price(side, live_price, tick_size);
+                if (stop_price.has_value()) stop_side = (side == "buy") ? "sell" : "buy";
+            }
+
+            // 9c. Display full trade configuration.
+            display_trade_details(symbol, product_id, side, size, *live_rate, live_price, contract_value,
+                                   contract_unit, tick_size, initial_margin, maint_margin, taker_fee, maker_fee,
+                                   interval_h, next_funding_micro, (long long)entry_ts_s, (long long)close_ts_s,
+                                   balance, LEVERAGE, stop_price);
+
+            // 9d. Fire ENTRY and STOP-LOSS orders concurrently via threads.
+            std::optional<json> entry_order, stop_order;
+            std::printf("\n[ENTRY] Placing %s market order | %s | size=%lld\n", side_upper.c_str(),
+                        symbol.c_str(), size);
+            if (STOP_LOSS_ENABLED && stop_price.has_value()) {
+                std::string stop_side_upper = stop_side; for (auto &c : stop_side_upper) c = toupper(c);
+                std::printf("[STOP]  Simultaneously placing %s stop-loss | trigger=%s\n",
+                            stop_side_upper.c_str(), format_price(*stop_price, tick_size).c_str());
+            } else if (STOP_LOSS_ENABLED) {
+                std::printf("[STOP]  Stop-loss skipped (could not compute valid stop price for this contract)\n");
+            }
+
+            std::thread t_entry([&]() { entry_order = place_market_order(product_id, side, size); });
+            std::thread t_stop([&]() {
+                if (STOP_LOSS_ENABLED && stop_price.has_value())
+                    stop_order = place_stop_order(product_id, stop_side, size, *stop_price, tick_size);
+            });
+            t_entry.join();
+            t_stop.join();
+
+            if (!entry_order.has_value()) {
+                std::printf("[ERROR] Entry order placement failed for %s.\n", symbol.c_str());
+                if (stop_order.has_value()) {
+                    std::printf("[CLEANUP] Entry failed but stop-loss order exists - cancelling it.\n");
+                    cancel_order(product_id, json_int(*stop_order, "id", 0));
+                }
+                std::this_thread::sleep_for(std::chrono::seconds(10));
+                continue;
+            }
+
+            std::printf("[ENTRY] Order placed successfully | order_id=%s | avg_fill=%s\n",
+                        entry_order->contains("id") ? entry_order->at("id").dump().c_str() : "N/A",
+                        entry_order->contains("average_fill_price")
+                            ? entry_order->at("average_fill_price").dump().c_str() : "N/A");
+            g_active_product_id = product_id;
+
+            // 9e. Reconcile stop-loss size against actual filled size.
+            long long requested_size = size;
+            long long unfilled = json_int(*entry_order, "unfilled_size", 0);
+            long long filled_size = requested_size - unfilled;
+
+            if (STOP_LOSS_ENABLED && stop_price.has_value()) {
+                if (filled_size <= 0) {
+                    std::printf("[WARN] Entry order filled 0 contracts. Cancelling stop-loss if placed.\n");
+                    if (stop_order.has_value()) cancel_order(product_id, json_int(*stop_order, "id", 0));
+                    g_active_product_id.reset();
+                    g_active_stop_order_id.reset();
+                    std::this_thread::sleep_for(std::chrono::seconds(10));
+                    continue;
+                }
+                if (filled_size != requested_size) {
+                    std::printf("[WARN] Partial fill: requested=%lld, filled=%lld. Re-placing stop-loss with correct size.\n",
+                                requested_size, filled_size);
+                    if (stop_order.has_value()) cancel_order(product_id, json_int(*stop_order, "id", 0));
+                    stop_order = place_stop_order(product_id, stop_side, filled_size, *stop_price, tick_size);
+                }
+                if (stop_order.has_value()) {
+                    g_active_stop_order_id = json_int(*stop_order, "id", 0);
+                    std::string stop_side_upper = stop_side; for (auto &c : stop_side_upper) c = toupper(c);
+                    std::printf("[STOP]  Stop-loss confirmed | order_id=%lld | trigger=%s | side=%s | size=%lld\n",
+                                *g_active_stop_order_id, format_price(*stop_price, tick_size).c_str(),
+                                stop_side_upper.c_str(), filled_size);
+                } else {
+                    g_active_stop_order_id.reset();
+                    std::printf("[WARN]  Stop-loss order FAILED to place - position is currently unprotected!\n");
+                }
+            }
+
+            // 10. Wait until CLOSE_AFTER_MS after funding, then close.
+            wait_until_ts(close_ts_s, "Waiting to close after funding settlement");
+
+            if (g_active_stop_order_id.has_value()) {
+                std::printf("[CLEANUP] Cancelling resting stop-loss order_id=%lld before scheduled close.\n",
+                            *g_active_stop_order_id);
+                cancel_order(product_id, g_active_stop_order_id);
+                g_active_stop_order_id.reset();
+            }
+
+            std::printf("\n[CLOSE] Closing position for %s...\n", symbol.c_str());
+            close_position(product_id, symbol);
+            g_active_product_id.reset();
+
+            // 11. Sleep until next scan cycle.
+            double elapsed = now_epoch_d() - loop_start;
+            double sleep_s = std::max(0.0, SCAN_INTERVAL_S - elapsed);
+            std::printf("\n[CYCLE] Trade cycle complete. Next scan in %.0fs.\n", sleep_s);
+            separator();
+            std::this_thread::sleep_for(std::chrono::duration<double>(sleep_s));
+
+        } catch (const std::exception &e) {
+            std::printf("[ERROR] Unexpected error in main loop: %s\n", e.what());
+            if (g_active_product_id.has_value())
+                std::printf("[WARN] Open position may exist for product_id=%lld. Will attempt cleanup on next iteration.\n",
+                            *g_active_product_id);
+            std::this_thread::sleep_for(std::chrono::seconds(30));
+        }
+    }
+
+    // Ctrl+C / termination cleanup, mirroring the Python KeyboardInterrupt handler.
+    std::printf("\n[STOP] Bot stopped by user.\n");
+    if (g_active_stop_order_id.has_value()) {
+        std::printf("[STOP] Cancelling resting stop-loss order_id=%lld...\n", *g_active_stop_order_id);
+        cancel_order(g_active_product_id.value_or(0), g_active_stop_order_id);
+    }
+    if (g_active_product_id.has_value()) {
+        std::printf("[STOP] Attempting to close open position (product_id=%lld)...\n", *g_active_product_id);
+        close_position(*g_active_product_id, "open_position");
+    }
+}
+
+int main() {
+    socket_platform_init();
+
+    load_dotenv();
+    API_KEY    = env_or("API_KEY");
+    API_SECRET = env_or("API_SECRET");
+
+    std::signal(SIGINT, signal_handler);
+    std::signal(SIGTERM, signal_handler);
+
+    run_bot();
+
+    socket_platform_cleanup();
+    return 0;
+}

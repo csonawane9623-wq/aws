@@ -27,7 +27,7 @@ WS_URL               = 'wss://socket.india.delta.exchange'
 
 LEVERAGE             = 20
 POSITION_PCT         = 0.20      # 10% of available balance
-ENTRY_BEFORE_S       = 3660        # Enter 15 seconds before funding
+ENTRY_BEFORE_S       = 15        # Enter 15 seconds before funding
 CLOSE_AFTER_MS       = 100       # Close 100ms after funding
 SCAN_INTERVAL_S      = 300       # Re-scan every 5 minutes
 WINDOW_S             = 14400       # Only act if funding <= 5 min away
