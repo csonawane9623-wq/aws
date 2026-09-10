@@ -20,7 +20,7 @@
  *    g++ -std=c++17 -O2 -o delta_close_bot delta_close_bot.cpp  -lcurl -lssl -lcrypto
  *
  *  Compilation (Windows - MinGW/MSYS2):
- *    g++ -std=c++17 -O2 -o delta_close_bot.exe delta_close_bot.cpp \
+ *    g++ -std=c++17 -O2 -o MktM.exe MktM.cpp \
  *        -lcurl -lssl -lcrypto -lws2_32
  * ============================================================
  */
