@@ -134,15 +134,15 @@ const std::string SYMBOL_2 = "XAUTUSD";
 // ============================================================
 
 const double ENTRY_SPREAD = 6.0;
-const double EXIT_SPREAD  = 5.85;   // close the hedge once |spread| reverts to this level
+const double EXIT_SPREAD  = 0.0;   // close the hedge once |spread| reverts to this level
 
 // ============================================================
 // RISK
 // ============================================================
 
 const int    LEVERAGE              = 100;
-const double CAPITAL_PERCENT       = 0.50;
-const int    COOLDOWN_AFTER_EXIT   = 30;
+const double CAPITAL_PERCENT       = 1;
+const int    COOLDOWN_AFTER_EXIT   = 0;
 
 // ============================================================
 // FILTERS
@@ -827,7 +827,7 @@ private:
             }
 
             if (entry_price_1 > 0.0 && entry_price_2 > 0.0)
-                entry_spread_ = entry_price_1 - entry_price_2;
+                entry_spread_ = std::abs(entry_price_1 - entry_price_2);
 
             entry_price_1_   = entry_price_1;
             entry_price_2_   = entry_price_2;
@@ -985,6 +985,23 @@ private:
     }
 
     // --------------------------------------------------------
+    // Determine trade direction from the RAW (signed) spread.
+    // This is the single place that decides which leg is bought
+    // vs sold — kept separate from the magnitude of the spread
+    // (which is always reported/thresholded as a positive number).
+    //
+    //   raw_spread = price(PAXG) - price(XAUT)
+    //   raw_spread > 0  => PAXG is trading rich vs XAUT
+    //                      => SHORT_PAXG / LONG_XAUT
+    //   raw_spread < 0  => PAXG is trading cheap vs XAUT
+    //                      => LONG_PAXG / SHORT_XAUT
+    // --------------------------------------------------------
+    static std::string direction_from_raw_spread(double raw_spread)
+    {
+        return (raw_spread > 0.0) ? "SHORT_PAXG" : "LONG_PAXG";
+    }
+
+    // --------------------------------------------------------
     // Live PnL Telegram Update — sent every PNL_UPDATE_INTERVAL_SEC
     // while a hedge is open. Pure in-memory computation; safe to
     // call from the WS thread (send_telegram is fire-and-forget).
@@ -993,7 +1010,7 @@ private:
     {
         if (!positions_open_) return;
 
-        double      current_spread = cp1 - cp2;
+        double      current_spread = std::abs(cp1 - cp2);
         double      pnl            = compute_pnl(cp1, cp2);
         long long   hold_sec       = (entry_time_ > 0) ? (now_sec() - entry_time_) : 0;
 
@@ -1048,14 +1065,24 @@ private:
         std::optional<json> res1, res2;
         std::string         signal;
 
+        // --------------------------------------------------------
+        // Order placement direction is driven ENTIRELY by the
+        // `direction` argument (computed once, upstream, from the
+        // raw signed spread via direction_from_raw_spread()).
+        // This function never re-derives direction from price —
+        // it only places the two legs required for whichever
+        // direction it was told to open.
+        // --------------------------------------------------------
         if (direction == "SHORT_PAXG")
         {
+            // PAXG rich vs XAUT: sell the expensive leg, buy the cheap leg
             res1   = client_.place_market_order(pid1, "sell", size1);
             res2   = client_.place_market_order(pid2, "buy",  size2);
             signal = "SHORT PAXG / LONG XAUT";
         }
-        else
+        else // LONG_PAXG
         {
+            // PAXG cheap vs XAUT: buy the cheap leg, sell the expensive leg
             res1   = client_.place_market_order(pid1, "buy",  size1);
             res2   = client_.place_market_order(pid2, "sell", size2);
             signal = "LONG PAXG / SHORT XAUT";
@@ -1101,7 +1128,8 @@ private:
             }
         }
 
-        double current_spread = actual_price_1 - actual_price_2;
+        // entry_spread_ is always stored/reported as a positive magnitude.
+        double current_spread = std::abs(actual_price_1 - actual_price_2);
         positions_open_  = true;
         entry_time_      = now_sec();
         entry_spread_    = current_spread;
@@ -1204,7 +1232,7 @@ private:
         msg << std::fixed << std::setprecision(2)
             << "Entry Spread: " << entry_spread_val << "\n";
         if (cp1 > 0.0 && cp2 > 0.0)
-            msg << "Exit Spread: " << (cp1 - cp2) << "\n";
+            msg << "Exit Spread: " << std::abs(cp1 - cp2) << "\n";
         if (have_pnl)
             msg << "Realized PnL: $" << realized_pnl << "\n";
         msg << "Hold Time: " << format_duration(hold_sec) << "\n"
@@ -1230,6 +1258,7 @@ private:
     // --------------------------------------------------------
     // Dashboard — rate-limited to DASHBOARD_REFRESH_MS
     // Does NOT make any REST calls.
+    // `spread` passed in is ALWAYS the positive magnitude.
     // --------------------------------------------------------
     void dashboard(double spread, const std::string& signal, int open_count,
                    const std::optional<OBMetrics>& m1,
@@ -1246,10 +1275,9 @@ private:
         std::cout << "PAXG    : " << *prices_[SYMBOL_1] << "\n";
         std::cout << "XAUT    : " << *prices_[SYMBOL_2] << "\n";
         std::cout << "Balance : $" << cached_balance_   << "\n\n";
-        std::cout << "Spread        : " << spread           << "\n";
-        std::cout << "Abs Spread    : " << std::abs(spread) << "\n";
-        std::cout << "Entry Trigger : >= " << ENTRY_SPREAD  << " (both directions)\n";
-        std::cout << "Exit Trigger  : |spread| <= " << EXIT_SPREAD << "\n\n";
+        std::cout << "Spread (abs)  : " << spread           << "\n";
+        std::cout << "Entry Trigger : >= " << ENTRY_SPREAD  << "\n";
+        std::cout << "Exit Trigger  : <= " << EXIT_SPREAD   << "\n\n";
         std::cout << "Entry Direction : " << entry_direction_ << "\n";
         if (entry_spread_)
             std::cout << "Entry Spread    : " << *entry_spread_ << "\n";
@@ -1284,6 +1312,15 @@ private:
     // --------------------------------------------------------
     // Evaluate Strategy — called on WS thread, ZERO blocking I/O.
     // All REST work is posted to rest_queue_.
+    //
+    // Spread handling:
+    //   raw_spread  = p1 - p2                (signed, internal only)
+    //   spread      = std::abs(raw_spread)   (always positive — this is
+    //                                          what gets compared against
+    //                                          ENTRY_SPREAD / EXIT_SPREAD
+    //                                          and what gets displayed)
+    //   direction   = direction_from_raw_spread(raw_spread)
+    //                 (the ONLY place that decides which leg to buy/sell)
     // --------------------------------------------------------
     void evaluate()
     {
@@ -1299,7 +1336,8 @@ private:
 
         if (!p1 || !p2) return;
 
-        double spread = *p1 - *p2;
+        double raw_spread = *p1 - *p2;       // signed — used only to pick direction
+        double spread     = std::abs(raw_spread); // positive magnitude — used everywhere else
 
         // --- 2. Compute metrics purely in memory (fast) ---
         auto m1 = orderbook_metrics(SYMBOL_1, obs);
@@ -1331,10 +1369,15 @@ private:
 
         if (!positions_open_)
         {
-            if (std::abs(spread) >= ENTRY_SPREAD && !trade_in_flight_.load())
+            if (spread >= ENTRY_SPREAD && !trade_in_flight_.load())
             {
-                std::string direction = (spread > 0) ? "SHORT_PAXG" : "LONG_PAXG";
-                signal = (spread > 0) ? "SHORT PAXG / LONG XAUT" : "LONG PAXG / SHORT XAUT";
+                // Direction is decided ONCE here, from the signed raw spread,
+                // and threaded through to open_trade_async() as an explicit
+                // argument — it is never re-derived downstream.
+                std::string direction = direction_from_raw_spread(raw_spread);
+                signal = (direction == "SHORT_PAXG")
+                             ? "SHORT PAXG / LONG XAUT"
+                             : "LONG PAXG / SHORT XAUT";
 
                 trade_in_flight_.store(true);
 
@@ -1359,8 +1402,8 @@ private:
 
             // --- 5b. Exit logic ---
             // No maximum hold time and no stop-loss: the hedge is held
-            // until the spread reverts to within +/- EXIT_SPREAD of zero.
-            bool exit_condition = (std::abs(spread) <= EXIT_SPREAD);
+            // until the (always-positive) spread reverts to <= EXIT_SPREAD.
+            bool exit_condition = (spread <= EXIT_SPREAD);
 
             if (exit_condition && !trade_in_flight_.load())
             {
@@ -1405,6 +1448,32 @@ private:
         ix::WebSocket ws;
         ws.setUrl(WS_URL);
         ws.setPingInterval(20);
+
+        // --------------------------------------------------------
+        // Explicitly point OpenSSL at a CA bundle for certificate
+        // verification. We don't rely on the SSL_CERT_FILE env var
+        // being honored automatically — some IXWebSocket/OpenSSL
+        // combos on Windows/MSYS2 never call
+        // SSL_CTX_set_default_verify_paths(), so the env var is
+        // silently ignored and every connection fails with
+        // "certificate verify failed".
+        //
+        // Path resolution order:
+        //   1. CA_BUNDLE_PATH from .env / environment, if set
+        //   2. SSL_CERT_FILE from .env / environment, if set
+        //   3. Hardcoded fallback (update this if your bundle lives
+        //      somewhere else — run:
+        //        find /ucrt64 -iname "*ca-bundle*" -o -iname "cacert.pem"
+        //      to find the real path on your machine)
+        // --------------------------------------------------------
+        std::string ca_file = optional_env("CA_BUNDLE_PATH");
+        if (ca_file.empty()) ca_file = optional_env("SSL_CERT_FILE");
+        if (ca_file.empty()) ca_file = "/ucrt64/ssl/certs/ca-bundle.crt";
+
+        ix::SocketTLSOptions tls_options;
+        tls_options.caFile = ca_file;
+        ws.setTLSOptions(tls_options);
+        log_info("Using CA bundle: " + ca_file);
 
         std::atomic<bool> ever_opened{ false };
 
@@ -1530,8 +1599,8 @@ int main()
 
     try
     {
-        API_KEY          = require_env("API_KEY1");
-        API_SECRET       = require_env("API_SECRET1");
+        API_KEY          = require_env("API_KEY6");
+        API_SECRET       = require_env("API_SECRET6");
         TELEGRAM_TOKEN   = optional_env("TELEGRAM_TOKEN");
         TELEGRAM_CHAT_ID = optional_env("TELEGRAM_CHAT_ID");
 
@@ -1543,8 +1612,8 @@ int main()
     catch (const std::exception& e)
     {
         std::cerr << "[FATAL] " << e.what() << "\n\n";
-        std::cerr << "  API_KEY1=your_api_key\n";
-        std::cerr << "  API_SECRET1=your_api_secret\n";
+        std::cerr << "  API_KEY6=your_api_key\n";
+        std::cerr << "  API_SECRET6=your_api_secret\n";
         std::cerr << "  TELEGRAM_TOKEN=your_token        (optional)\n";
         std::cerr << "  TELEGRAM_CHAT_ID=your_chat_id   (optional)\n";
         return 1;
